@@ -3,307 +3,197 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>3D Animation Documentary</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@300;400;500;600;700&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-    <link rel="stylesheet" href="styles.css">
+    <title>LED Band Gap Simulator</title>
+    <style>
+        body {
+            margin: 0;
+            background: #0a0a0c;
+            color: white;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            overflow: hidden;
+        }
+        #controls {
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.05);
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            border-bottom: 1px solid #333;
+            z-index: 10;
+        }
+        .slider-group {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        canvas {
+            cursor: crosshair;
+        }
+        .label-text {
+            font-size: 14px;
+            margin-bottom: 5px;
+            color: #aaa;
+        }
+        #info {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            background: rgba(0,0,0,0.7);
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid #444;
+            max-width: 300px;
+            pointer-events: none;
+        }
+    </style>
 </head>
 <body>
-    <div class="welcome-banner">
-        <div class="container">
-            <p class="welcome-text">🎉 Welcome to my senior project! 🎉</p>
-        </div>
+
+<div id="controls">
+    <div class="slider-group">
+        <div class="label-text">Band Gap Energy ($E_g$)</div>
+        <input type="range" id="gapHeight" min="1.8" max="3.1" step="0.05" value="2.0" style="width:200px">
+        <div id="evDisplay">2.00 eV</div>
     </div>
-    <header>
-        <nav class="navbar">
-            <div class="container">
-                <div class="logo">
-                    <a href="#">3D</a>
-                </div>
-                <ul class="nav-menu">
-                    <li><a href="#home">Work</a></li>
-                    <li><a href="#about">About</a></li>
-                    <li><a href="#gallery">Gallery</a></li>
-                    <li><a href="#create">Create</a></li>
-                    <li><a href="#contact">Contact</a></li>
-                </ul>
-                <div class="hamburger">
-                    <span></span>
-                    <span></span>
-                    <span></span>
-                </div>
-            </div>
-        </nav>
-    </header>
+</div>
 
-    <main>
-        <section id="home" class="hero">
-            <div class="container">
-                <div class="hero-content">
-                    <h1 class="hero-title">
-                        <span class="title-line">3D Animation</span>
-                        <span class="title-line">Documentary</span>
-                    </h1>
-                    <p class="hero-subtitle">Exploring dimensions through motion ✨</p>
-                </div>
-                <div class="hero-canvas">
-                    <div class="cube-container">
-                        <div class="cube">
-                            <div class="face front"></div>
-                            <div class="face back"></div>
-                            <div class="face right"></div>
-                            <div class="face left"></div>
-                            <div class="face top"></div>
-                            <div class="face bottom"></div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </section>
+<div id="info">
+    <strong>Quantum-Classical Analogy</strong><br>
+    The ball is an <em>electron</em>. The ledge is the <em>Conduction Band</em>. The floor is the <em>Valence Band</em>. Falling across the "Gap" releases light.
+</div>
 
-        <section id="about" class="about">
-            <div class="container">
-                <div class="section-header">
-                    <span class="section-number">01</span>
-                    <h2>About</h2>
-                </div>
-                <div class="about-content">
-                    <p class="about-text">
-                        A collection of 3D animations exploring form, space, and movement. 
-                        Each piece represents a journey through digital dimensions, 
-                        where geometry meets motion.
-                    </p>
-                    <div class="about-details">
-                        <div class="detail-item">
-                            <span class="detail-label">Focus</span>
-                            <span class="detail-value">Minimalism</span>
-                        </div>
-                        <div class="detail-item">
-                            <span class="detail-label">Medium</span>
-                            <span class="detail-value">3D Animation</span>
-                        </div>
-                        <div class="detail-item">
-                            <span class="detail-label">Style</span>
-                            <span class="detail-value">Geometric</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </section>
+<canvas id="ledCanvas"></canvas>
 
-        <section id="gallery" class="gallery">
-            <div class="container">
-                <div class="section-header">
-                    <span class="section-number">02</span>
-                    <h2>Gallery</h2>
-                </div>
-                <div class="gallery-grid">
-                    <div class="gallery-item">
-                        <div class="gallery-placeholder">
-                            <span>Animation 01</span>
-                        </div>
-                        <div class="gallery-info">
-                            <h3>Project One</h3>
-                            <p>Geometric exploration</p>
-                        </div>
-                    </div>
-                    <div class="gallery-item">
-                        <div class="gallery-placeholder">
-                            <span>Animation 02</span>
-                        </div>
-                        <div class="gallery-info">
-                            <h3>Project Two</h3>
-                            <p>Motion study</p>
-                        </div>
-                    </div>
-                    <div class="gallery-item">
-                        <div class="gallery-placeholder">
-                            <span>Animation 03</span>
-                        </div>
-                        <div class="gallery-info">
-                            <h3>Project Three</h3>
-                            <p>Spatial composition</p>
-                        </div>
-                    </div>
-                    <div class="gallery-item">
-                        <div class="gallery-placeholder">
-                            <span>Animation 04</span>
-                        </div>
-                        <div class="gallery-info">
-                            <h3>Project Four</h3>
-                            <p>Form transformation</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </section>
+<script>
+    const canvas = document.getElementById('ledCanvas');
+    const ctx = canvas.getContext('2d');
+    const gapSlider = document.getElementById('gapHeight');
+    const evDisplay = document.getElementById('evDisplay');
 
-        <section id="create" class="create-character">
-            <div class="container">
-                <div class="section-header">
-                    <span class="section-number">03</span>
-                    <h2>Create Your Character</h2>
-                </div>
-                <div class="character-creator">
-                    <div class="character-preview">
-                        <div class="character-canvas-wrapper">
-                            <div id="character-container" class="character-container">
-                                <!-- Character will be rendered here -->
-                                <div class="character-body" id="character-body">
-                                    <!-- Head -->
-                                    <div class="char-head" id="char-head">
-                                        <div class="head-shine"></div>
-                                    </div>
-                                    <div class="char-neck"></div>
-                                    
-                                    <!-- Torso -->
-                                    <div class="char-torso">
-                                        <!-- Suit Jacket -->
-                                        <div class="char-jacket" id="char-jacket">
-                                            <div class="jacket-lapel jacket-lapel-left"></div>
-                                            <div class="jacket-lapel jacket-lapel-right"></div>
-                                            <div class="jacket-button jacket-button-1"></div>
-                                            <div class="jacket-button jacket-button-2"></div>
-                                            <div class="jacket-pocket"></div>
-                                            <div class="jacket-shine"></div>
-                                        </div>
-                                        
-                                        <!-- Shirt -->
-                                        <div class="char-shirt" id="char-shirt">
-                                            <div class="shirt-collar collar-left"></div>
-                                            <div class="shirt-collar collar-right"></div>
-                                            <div class="shirt-placket"></div>
-                                        </div>
-                                        
-                                        <!-- Tie -->
-                                        <div class="char-tie" id="char-tie">
-                                            <div class="tie-knot"></div>
-                                            <div class="tie-shine"></div>
-                                        </div>
-                                        
-                                        <!-- Belt -->
-                                        <div class="char-belt">
-                                            <div class="belt-buckle">
-                                                <div class="buckle-shine"></div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    
-                                    <!-- Arms -->
-                                    <div class="char-arm char-arm-left" id="char-arm-left">
-                                        <div class="arm-jacket-sleeve"></div>
-                                        <div class="char-hand char-hand-left" id="char-hand-left">
-                                            <div class="hand-shine"></div>
-                                        </div>
-                                    </div>
-                                    <div class="char-arm char-arm-right" id="char-arm-right">
-                                        <div class="arm-jacket-sleeve"></div>
-                                        <div class="char-hand char-hand-right" id="char-hand-right">
-                                            <div class="hand-shine"></div>
-                                        </div>
-                                    </div>
-                                    
-                                    <!-- Legs -->
-                                    <div class="char-leg char-leg-left" id="char-leg-left">
-                                        <div class="pants-crease"></div>
-                                    </div>
-                                    <div class="char-leg char-leg-right" id="char-leg-right">
-                                        <div class="pants-crease"></div>
-                                    </div>
-                                </div>
-                            </div>
-                            <canvas id="character-canvas" style="display: none;"></canvas>
-                        </div>
-                    </div>
-                    
-                    <div class="character-controls">
-                        <div class="control-panel">
-                            <h3>Customize</h3>
-                            
-                            <div class="control-group">
-                                <label>Suit Color</label>
-                                <input type="color" id="suit-color" value="#000000" class="color-picker">
-                            </div>
-                            
-                            <div class="control-group">
-                                <label>Shirt Color</label>
-                                <input type="color" id="shirt-color" value="#ffffff" class="color-picker">
-                            </div>
-                            
-                            <div class="control-group">
-                                <label>Tie Color</label>
-                                <input type="color" id="tie-color" value="#0066cc" class="color-picker">
-                            </div>
-                            
-                            <div class="control-group">
-                                <label>Pants Color</label>
-                                <input type="color" id="pants-color" value="#000000" class="color-picker">
-                            </div>
-                            
-                            <div class="control-group">
-                                <label>Left Arm Position</label>
-                                <input type="range" id="arm-left-rotation" min="-45" max="45" value="0" class="slider">
-                                <span class="slider-value">0°</span>
-                            </div>
-                            
-                            <div class="control-group">
-                                <label>Right Arm Position</label>
-                                <input type="range" id="arm-right-rotation" min="-45" max="45" value="0" class="slider">
-                                <span class="slider-value">0°</span>
-                            </div>
-                            
-                            <div class="control-group">
-                                <label>Body Rotation</label>
-                                <input type="range" id="body-rotation" min="-30" max="30" value="0" class="slider">
-                                <span class="slider-value">0°</span>
-                            </div>
-                            
-                            <div class="control-group">
-                                <label>Pose</label>
-                                <select id="pose-select" class="pose-select">
-                                    <option value="thinking">Thinking/Listening</option>
-                                    <option value="standing">Standing</option>
-                                    <option value="arms-down">Arms Down</option>
-                                </select>
-                            </div>
-                            
-                            <button id="download-btn" class="download-button">📥 Download as PNG</button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </section>
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
 
-        <section id="contact" class="contact">
-            <div class="container">
-                <div class="section-header">
-                    <span class="section-number">04</span>
-                    <h2>Contact</h2>
-                </div>
-                <form class="contact-form">
-                    <div class="form-group">
-                        <input type="text" id="name" name="name" placeholder="Name" required>
-                    </div>
-                    <div class="form-group">
-                        <input type="email" id="email" name="email" placeholder="Email" required>
-                    </div>
-                    <div class="form-group">
-                        <textarea id="message" name="message" rows="5" placeholder="Message" required></textarea>
-                    </div>
-                    <button type="submit" class="submit-button">Send</button>
-                </form>
-            </div>
-        </section>
-    </main>
+    let ball = { x: canvas.width / 2, y: 0, dy: 0, radius: 12, falling: false };
+    let photons = [];
+    
+    // Physical Constants
+    const gravity = 0.5;
+    const floorY = canvas.height - 100;
 
-    <footer>
-        <div class="container">
-            <p>&copy; 2024 3D Animation Documentary</p>
-        </div>
-    </footer>
+    function getLEDColor(ev) {
+        // Simple eV to RGB mapping
+        // 1.8 eV (Red) to 3.1 eV (Violet)
+        const ratio = (ev - 1.8) / (3.1 - 1.8);
+        const hue = 240 - (ratio * 240); // 240 (Blue) to 0 (Red)
+        return `hsl(${hue}, 100%, 50%)`;
+    }
 
-    <script src="script.js"></script>
+    function drawScene() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        const ev = parseFloat(gapSlider.value);
+        const gapPx = ev * 150; // Visual scaling
+        const ledgeY = floorY - gapPx;
+        const color = getLEDColor(ev);
+
+        // Draw Ledge (Conduction Band)
+        ctx.strokeStyle = '#555';
+        ctx.setLineDash([5, 5]);
+        ctx.beginPath();
+        ctx.moveTo(canvas.width/2 - 100, ledgeY);
+        ctx.lineTo(canvas.width/2 + 100, ledgeY);
+        ctx.stroke();
+        ctx.setLineDash([]);
+
+        ctx.fillStyle = '#333';
+        ctx.fillRect(canvas.width/2 - 120, ledgeY, 240, 10);
+        ctx.fillStyle = '#aaa';
+        ctx.fillText("CONDUCTION BAND", canvas.width/2 - 50, ledgeY - 15);
+
+        // Draw Ground (Valence Band)
+        ctx.fillStyle = '#222';
+        ctx.fillRect(0, floorY, canvas.width, 100);
+        ctx.fillStyle = color;
+        ctx.globalAlpha = 0.3;
+        ctx.fillRect(0, floorY, canvas.width, 2); // Glow on floor
+        ctx.globalAlpha = 1.0;
+        ctx.fillStyle = '#aaa';
+        ctx.fillText("VALENCE BAND", 20, floorY + 25);
+
+        // Update & Draw Ball
+        if (!ball.falling) {
+            ball.y = ledgeY - ball.radius;
+            ball.x = canvas.width / 2;
+            // Auto-drop logic
+            if (Math.random() < 0.02) ball.falling = true;
+        } else {
+            ball.dy += gravity;
+            ball.y += ball.dy;
+
+            if (ball.y + ball.radius >= floorY) {
+                ball.y = floorY - ball.radius;
+                // Emit Photon
+                photons.push({
+                    x: ball.x,
+                    y: ball.y,
+                    r: 5,
+                    opacity: 1,
+                    color: color,
+                    vx: (Math.random() - 0.5) * 10,
+                    vy: (Math.random() - 0.5) * 10
+                });
+                // Reset Ball
+                ball.falling = false;
+                ball.dy = 0;
+            }
+        }
+
+        ctx.beginPath();
+        ctx.arc(ball.x, ball.y, ball.radius, 0, Math.PI * 2);
+        ctx.fillStyle = "white";
+        ctx.shadowBlur = 15;
+        ctx.shadowColor = "white";
+        ctx.fill();
+        ctx.shadowBlur = 0;
+
+        // Draw Photons (The "Sound" or Light)
+        for (let i = photons.length - 1; i >= 0; i--) {
+            let p = photons[i];
+            p.x += p.vx;
+            p.y += p.vy;
+            p.opacity -= 0.02;
+
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+            ctx.fillStyle = p.color;
+            ctx.globalAlpha = p.opacity;
+            ctx.shadowBlur = 10;
+            ctx.shadowColor = p.color;
+            ctx.fill();
+            
+            if (p.opacity <= 0) photons.splice(i, 1);
+        }
+        ctx.globalAlpha = 1.0;
+        ctx.shadowBlur = 0;
+
+        requestAnimationFrame(drawScene);
+    }
+
+    gapSlider.oninput = function() {
+        evDisplay.innerText = `${parseFloat(this.value).toFixed(2)} eV`;
+    };
+
+    window.onresize = function() {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+    };
+
+    drawScene();
+</script>
+
 </body>
 </html>
