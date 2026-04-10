@@ -99,27 +99,27 @@
     <button id="dropBtn">Drop Electron</button>
 
     <div class="slider-group">
-        <div class="label-text">Band Gap Energy ($E_g$)</div>
+        <div class="label-text">Band Gap Energy (Height of the fall)</div>
         <input type="range" id="gapHeight" min="1.8" max="3.1" step="0.05" value="2.0" style="width:250px">
         <div id="evDisplay" style="font-size: 18px; font-weight: bold; margin-top: 5px;">2.00 eV</div>
     </div>
 </div>
 
 <div id="dictionary">
-    <h3>Quantum Dictionary</h3>
+    <h3>The Apartment Analogy</h3>
     <ul>
         <li><span class="highlight">The Ball:</span> An <strong>Electron (-)</strong>.</li>
-        <li><span class="highlight">The Ledge:</span> The <strong>Conduction Band</strong>. You can see electrons flowing freely to carry current.</li>
-        <li><span class="highlight">The Floor:</span> The <strong>Valence Band</strong>. Notice the empty "Holes" (+) waiting for an electron to reach a stable resting state.</li>
-        <li><span class="highlight">The Drop:</span> The <strong>Band Gap</strong>. This is a forbidden zone where electrons cannot exist.</li>
-        <li><span class="highlight">The Sparks:</span> <strong>Photons (Light)</strong>. The kinetic energy lost from the fall is released as light waves.</li>
+        <li><span class="highlight">The Ledge:</span> The <strong>Conduction Band</strong> (The Upper Highway). Electrons here are free to carry current.</li>
+        <li><span class="highlight">The Floor:</span> The <strong>Valence Band</strong> (The Lower Garage). Notice the empty "Holes" (+) waiting for an electron to park.</li>
+        <li><span class="highlight">The Drop:</span> The <strong>Band Gap</strong>. Electrons cannot float in the air; they must jump all the way down.</li>
+        <li><span class="highlight">The Sparks:</span> <strong>Photons (Light)</strong>. The energy from the fall is thrown out as a flash of light.</li>
     </ul>
     
     <h3 style="margin-top: 25px;">Why the Color Changes</h3>
     <p>The height of the drop dictates the energy of the photon emitted:</p>
     <div><span class="red-text">Short Drop:</span> Low Energy = Red Light</div>
     <div style="margin: 8px 0;"><span class="green-text">Medium Drop:</span> Medium Energy = Green Light</div>
-    <div><span class="blue-text">High Drop:</span> High Energy = Blue/Violet Light</div>
+    <div><span class="blue-text">High Drop:</span> High Energy = Blue Light</div>
 </div>
 
 <canvas id="ledCanvas"></canvas>
@@ -134,7 +134,7 @@
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
 
-    let ball = { x: canvas.width / 2 + 150, y: 0, dy: 0, radius: 14, falling: false, landed: false };
+    let ball = { x: canvas.width / 2 + 100, y: 0, dy: 0, radius: 14, falling: false, landed: false };
     let photons = [];
     
     const gravity = 0.5;
@@ -167,6 +167,91 @@
         ctx.stroke();
     }
 
+    // NEW: Function to draw the light spectrum graph
+    function drawSpectrumGraph(ev) {
+        const width = 320;
+        const height = 90;
+        const x = canvas.width - width - 20; // 20px from right edge
+        const y = 120; // 120px from top
+
+        // Panel Background
+        ctx.fillStyle = "rgba(15, 15, 20, 0.9)";
+        ctx.strokeStyle = "#444";
+        ctx.lineWidth = 1;
+        
+        ctx.beginPath();
+        ctx.roundRect ? ctx.roundRect(x, y, width, height, 8) : ctx.rect(x, y, width, height);
+        ctx.fill();
+        ctx.stroke();
+
+        // Title
+        ctx.fillStyle = "white";
+        ctx.font = "bold 14px sans-serif";
+        ctx.textAlign = "center";
+        ctx.fillText("Photon Energy Graph (Visible Spectrum)", x + width / 2, y + 25);
+
+        // Draw Spectrum Gradient Bar
+        const barX = x + 20;
+        const barY = y + 40;
+        const barW = width - 40;
+        const barH = 20;
+
+        let gradient = ctx.createLinearGradient(barX, 0, barX + barW, 0);
+        gradient.addColorStop(0, "hsl(0, 100%, 50%)");     // Red (1.8 eV)
+        gradient.addColorStop(0.25, "hsl(60, 100%, 50%)"); // Yellow
+        gradient.addColorStop(0.5, "hsl(120, 100%, 50%)");// Green
+        gradient.addColorStop(0.75, "hsl(180, 100%, 50%)");// Cyan
+        gradient.addColorStop(1, "hsl(240, 100%, 50%)");   // Blue (3.1 eV)
+
+        ctx.fillStyle = gradient;
+        ctx.fillRect(barX, barY, barW, barH);
+        
+        // Outline for the bar
+        ctx.strokeStyle = "#fff";
+        ctx.lineWidth = 1;
+        ctx.strokeRect(barX, barY, barW, barH);
+
+        // Labels
+        ctx.fillStyle = "#aaa";
+        ctx.font = "12px sans-serif";
+        ctx.textAlign = "left";
+        ctx.fillText("Low (1.8 eV)", barX, barY + 35);
+        ctx.textAlign = "right";
+        ctx.fillText("High (3.1 eV)", barX + barW, barY + 35);
+
+        // The Sliding Indicator Marker
+        const ratio = (ev - 1.8) / (3.1 - 1.8);
+        const markerX = barX + (ratio * barW);
+        
+        // Marker Line
+        ctx.strokeStyle = "white";
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.moveTo(markerX, barY - 10);
+        ctx.lineTo(markerX, barY + barH + 5);
+        ctx.stroke();
+
+        // Marker Triangle (Top)
+        ctx.fillStyle = "white";
+        ctx.beginPath();
+        ctx.moveTo(markerX - 6, barY - 10);
+        ctx.lineTo(markerX + 6, barY - 10);
+        ctx.lineTo(markerX, barY);
+        ctx.fill();
+        
+        // Live eV readout above the marker
+        ctx.fillStyle = "white";
+        ctx.font = "bold 13px sans-serif";
+        ctx.textAlign = "center";
+        
+        // Keep text inside the box boundaries
+        let textX = markerX;
+        if (textX < barX + 20) textX = barX + 20;
+        if (textX > barX + barW - 20) textX = barX + barW - 20;
+        
+        ctx.fillText(`${ev.toFixed(2)} eV`, textX, barY - 15);
+    }
+
     function drawScene() {
         animationTime += 1;
         ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -175,9 +260,12 @@
         const gapPx = ev * 150; 
         const ledgeY = floorY - gapPx;
         const color = getLEDColor(ev);
-        const centerX = canvas.width / 2 + 150; 
+        const centerX = canvas.width / 2 + 50; 
 
-        // 1. Draw Band Gap Measurement & Forbidden Zone
+        // 1. Draw Spectrum Graph Panel
+        drawSpectrumGraph(ev);
+
+        // 2. Draw Band Gap Measurement & Forbidden Zone
         ctx.fillStyle = "rgba(255, 50, 50, 0.05)";
         ctx.fillRect(0, ledgeY + 15, canvas.width, floorY - ledgeY - 30);
         
@@ -195,12 +283,12 @@
         ctx.textAlign = "right";
         ctx.fillText(`Band Gap: ${ev.toFixed(2)} eV`, centerX - 215, ledgeY + (gapPx / 2) + 5);
 
-        // 2. Draw Conduction Band (Free flowing current)
+        // 3. Draw Conduction Band (Free flowing current)
         ctx.fillStyle = '#2a2a35';
         ctx.fillRect(centerX - 150, ledgeY - 10, 300, 25);
         ctx.fillStyle = '#aaa';
         ctx.textAlign = "center";
-        ctx.fillText("CONDUCTION BAND (Free to move & carry current)", centerX, ledgeY - 25);
+        ctx.fillText("CONDUCTION BAND (The Upper Highway)", centerX, ledgeY - 25);
         
         // Flowing electrons in conduction band
         ctx.fillStyle = "#00ffff";
@@ -211,7 +299,7 @@
             ctx.fill();
         }
 
-        // 3. Draw Valence Band (Stable resting state with "Holes")
+        // 4. Draw Valence Band (Stable resting state with "Holes")
         ctx.fillStyle = '#111';
         ctx.fillRect(0, floorY, canvas.width, canvas.height - floorY);
         ctx.fillStyle = color;
@@ -220,7 +308,7 @@
         ctx.globalAlpha = 1.0;
         ctx.fillStyle = '#aaa';
         ctx.textAlign = "center";
-        ctx.fillText("VALENCE BAND (Lower, stable energy resting state)", centerX, floorY + 60);
+        ctx.fillText("VALENCE BAND (The Lower Garage)", centerX, floorY + 60);
 
         // Draw "Holes" (+) in the valence band
         ctx.strokeStyle = "#ff4444";
@@ -242,7 +330,7 @@
             ctx.fillText("+", hx, hy + 1);
         }
 
-        // 4. Update & Draw Ball (Electron)
+        // 5. Update & Draw Ball (Electron)
         if (!ball.falling && !ball.landed) {
             ball.y = ledgeY - ball.radius;
             ball.x = centerX;
@@ -300,7 +388,7 @@
         ctx.textAlign = "left";
         ctx.fillText("← Electron", ball.x + 25, ball.y);
 
-        // 5. Draw Photons (Squiggly Light Waves)
+        // 6. Draw Photons (Squiggly Light Waves)
         for (let i = photons.length - 1; i >= 0; i--) {
             let p = photons[i];
             p.x += Math.cos(p.angle) * p.speed;
