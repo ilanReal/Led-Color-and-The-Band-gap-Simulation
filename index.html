@@ -1,136 +1,198 @@
 <!DOCTYPE html>
 <html lang="en">
-<style>
-        :root {
-            --bg-color: #f8f9fa;
-            --card-bg: #ffffff;
-            --text-main: #333;
-            --border-color: #e0e0e0;
-        }
-
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LED Band Gap Simulator</title>
+    <style>
         body {
+            margin: 0;
+            background: #0a0a0c;
+            color: white;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: var(--bg-color);
-            color: var(--text-main);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            overflow: hidden;
+        }
+        #controls {
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.05);
+            width: 100%;
             display: flex;
             justify-content: center;
+            gap: 30px;
+            border-bottom: 1px solid #333;
+            z-index: 10;
+        }
+        .slider-group {
+            display: flex;
+            flex-direction: column;
             align-items: center;
-            height: 100vh;
-            margin: 0;
         }
-
-        .container {
-            background: var(--card-bg);
-            padding: 2rem;
-            border-radius: 12px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.05);
-            width: 400px;
-            text-align: center;
-            border: 1px solid var(--border-color);
+        canvas {
+            cursor: crosshair;
         }
-
-        h2 { font-weight: 400; margin-bottom: 1.5rem; }
-
-        .led-display {
-            width: 80px;
-            height: 80px;
-            border-radius: 50% 50% 10% 10%;
-            margin: 0 auto 1.5rem;
-            background-color: #ff0000;
-            box-shadow: 0 0 20px rgba(255,0,0,0.5);
-            transition: all 0.3s ease;
+        .label-text {
+            font-size: 14px;
+            margin-bottom: 5px;
+            color: #aaa;
         }
-
-        .stats {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 10px;
-            margin-bottom: 20px;
-            text-align: left;
-            font-family: monospace;
-        }
-
-        .label { color: #666; font-size: 0.8rem; }
-        .value { font-size: 1.1rem; font-weight: bold; }
-
-        input[type=range] {
-            width: 100%;
-            margin: 20px 0;
-            cursor: pointer;
-        }
-
-        .formula {
-            margin-top: 20px;
-            padding-top: 15px;
-            border-top: 1px solid var(--border-color);
-            font-size: 0.9rem;
-            color: #555;
+        #info {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            background: rgba(0,0,0,0.7);
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid #444;
+            max-width: 300px;
+            pointer-events: none;
         }
     </style>
 </head>
 <body>
 
-<div class="container">
-    <h2>LED Band Gap Simulator</h2>
-    
-    <div id="led" class="led-display"></div>
-
-    <div class="stats">
-        <div>
-            <div class="label">Band Gap (Eg)</div>
-            <div id="eg-val" class="value">1.80 eV</div>
-        </div>
-        <div>
-            <div class="label">Wavelength (λ)</div>
-            <div id="wl-val" class="value">689 nm</div>
-        </div>
-    </div>
-
-    <input type="range" id="gap-slider" min="1.6" max="3.2" step="0.01" value="1.8">
-    
-    <div class="formula">
-        λ = (1240 / Eg) nm
+<div id="controls">
+    <div class="slider-group">
+        <div class="label-text">Band Gap Energy ($E_g$)</div>
+        <input type="range" id="gapHeight" min="1.8" max="3.1" step="0.05" value="2.0" style="width:200px">
+        <div id="evDisplay">2.00 eV</div>
     </div>
 </div>
 
-<script>
-    const slider = document.getElementById('gap-slider');
-    const egDisplay = document.getElementById('eg-val');
-    const wlDisplay = document.getElementById('wl-val');
-    const led = document.getElementById('led');
+<div id="info">
+    <strong>Quantum-Classical Analogy</strong><br>
+    The ball is an <em>electron</em>. The ledge is the <em>Conduction Band</em>. The floor is the <em>Valence Band</em>. Falling across the "Gap" releases light.
+</div>
 
-    function nmToRGB(wavelength) {
-        let r, g, b, factor;
-        if (wavelength >= 380 && wavelength < 440) {
-            r = -(wavelength - 440) / (440 - 380); g = 0.0; b = 1.0;
-        } else if (wavelength >= 440 && wavelength < 490) {
-            r = 0.0; g = (wavelength - 440) / (490 - 440); b = 1.0;
-        } else if (wavelength >= 490 && wavelength < 510) {
-            r = 0.0; g = 1.0; b = -(wavelength - 510) / (510 - 490);
-        } else if (wavelength >= 510 && wavelength < 580) {
-            r = (wavelength - 510) / (580 - 510); g = 1.0; b = 0.0;
-        } else if (wavelength >= 580 && wavelength < 645) {
-            r = 1.0; g = -(wavelength - 645) / (645 - 580); b = 0.0;
-        } else if (wavelength >= 645 && wavelength < 781) {
-            r = 1.0; g = 0.0; b = 0.0;
-        } else {
-            r = 0.0; g = 0.0; b = 0.0;
-        }
-        return `rgb(${Math.round(r * 255)}, ${Math.round(g * 255)}, ${Math.round(b * 255)})`;
+<canvas id="ledCanvas"></canvas>
+
+<script>
+    const canvas = document.getElementById('ledCanvas');
+    const ctx = canvas.getContext('2d');
+    const gapSlider = document.getElementById('gapHeight');
+    const evDisplay = document.getElementById('evDisplay');
+
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+
+    let ball = { x: canvas.width / 2, y: 0, dy: 0, radius: 12, falling: false };
+    let photons = [];
+    
+    // Physical Constants
+    const gravity = 0.5;
+    const floorY = canvas.height - 100;
+
+    function getLEDColor(ev) {
+        // Simple eV to RGB mapping
+        // 1.8 eV (Red) to 3.1 eV (Violet)
+        const ratio = (ev - 1.8) / (3.1 - 1.8);
+        const hue = 240 - (ratio * 240); // 240 (Blue) to 0 (Red)
+        return `hsl(${hue}, 100%, 50%)`;
     }
 
-    slider.oninput = function() {
-        const eg = parseFloat(this.value);
-        // Using the simplified hc constant (1240 eV*nm)
-        const wavelength = Math.round(1240 / eg);
-        const color = nmToRGB(wavelength);
+    function drawScene() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-        egDisplay.innerText = eg.toFixed(2) + " eV";
-        wlDisplay.innerText = wavelength + " nm";
-        
-        led.style.backgroundColor = color;
-        led.style.boxShadow = `0 0 30px ${color}`;
+        const ev = parseFloat(gapSlider.value);
+        const gapPx = ev * 150; // Visual scaling
+        const ledgeY = floorY - gapPx;
+        const color = getLEDColor(ev);
+
+        // Draw Ledge (Conduction Band)
+        ctx.strokeStyle = '#555';
+        ctx.setLineDash([5, 5]);
+        ctx.beginPath();
+        ctx.moveTo(canvas.width/2 - 100, ledgeY);
+        ctx.lineTo(canvas.width/2 + 100, ledgeY);
+        ctx.stroke();
+        ctx.setLineDash([]);
+
+        ctx.fillStyle = '#333';
+        ctx.fillRect(canvas.width/2 - 120, ledgeY, 240, 10);
+        ctx.fillStyle = '#aaa';
+        ctx.fillText("CONDUCTION BAND", canvas.width/2 - 50, ledgeY - 15);
+
+        // Draw Ground (Valence Band)
+        ctx.fillStyle = '#222';
+        ctx.fillRect(0, floorY, canvas.width, 100);
+        ctx.fillStyle = color;
+        ctx.globalAlpha = 0.3;
+        ctx.fillRect(0, floorY, canvas.width, 2); // Glow on floor
+        ctx.globalAlpha = 1.0;
+        ctx.fillStyle = '#aaa';
+        ctx.fillText("VALENCE BAND", 20, floorY + 25);
+
+        // Update & Draw Ball
+        if (!ball.falling) {
+            ball.y = ledgeY - ball.radius;
+            ball.x = canvas.width / 2;
+            // Auto-drop logic
+            if (Math.random() < 0.02) ball.falling = true;
+        } else {
+            ball.dy += gravity;
+            ball.y += ball.dy;
+
+            if (ball.y + ball.radius >= floorY) {
+                ball.y = floorY - ball.radius;
+                // Emit Photon
+                photons.push({
+                    x: ball.x,
+                    y: ball.y,
+                    r: 5,
+                    opacity: 1,
+                    color: color,
+                    vx: (Math.random() - 0.5) * 10,
+                    vy: (Math.random() - 0.5) * 10
+                });
+                // Reset Ball
+                ball.falling = false;
+                ball.dy = 0;
+            }
+        }
+
+        ctx.beginPath();
+        ctx.arc(ball.x, ball.y, ball.radius, 0, Math.PI * 2);
+        ctx.fillStyle = "white";
+        ctx.shadowBlur = 15;
+        ctx.shadowColor = "white";
+        ctx.fill();
+        ctx.shadowBlur = 0;
+
+        // Draw Photons (The "Sound" or Light)
+        for (let i = photons.length - 1; i >= 0; i--) {
+            let p = photons[i];
+            p.x += p.vx;
+            p.y += p.vy;
+            p.opacity -= 0.02;
+
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+            ctx.fillStyle = p.color;
+            ctx.globalAlpha = p.opacity;
+            ctx.shadowBlur = 10;
+            ctx.shadowColor = p.color;
+            ctx.fill();
+            
+            if (p.opacity <= 0) photons.splice(i, 1);
+        }
+        ctx.globalAlpha = 1.0;
+        ctx.shadowBlur = 0;
+
+        requestAnimationFrame(drawScene);
+    }
+
+    gapSlider.oninput = function() {
+        evDisplay.innerText = `${parseFloat(this.value).toFixed(2)} eV`;
     };
+
+    window.onresize = function() {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+    };
+
+    drawScene();
 </script>
 
 </body>
