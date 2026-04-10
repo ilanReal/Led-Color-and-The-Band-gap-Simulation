@@ -3,322 +3,273 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LED Band Gap Simulator</title>
+    <title>LED Band Gap Simulator - Fully Explained</title>
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-
         body {
-            background: #0f0f11;
-            color: #e0e0e0;
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            margin: 0;
+            background: #0a0a0c;
+            color: white;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             display: flex;
             flex-direction: column;
             align-items: center;
-            height: 100vh;
             overflow: hidden;
         }
-
-        #top-bar {
+        #controls {
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.05);
             width: 100%;
-            padding: 20px 40px;
             display: flex;
-            align-items: center;
-            gap: 24px;
-            border-bottom: 1px solid #1e1e22;
+            justify-content: center;
+            gap: 30px;
+            border-bottom: 1px solid #333;
+            z-index: 10;
         }
-
-        #top-bar label {
-            font-size: 13px;
-            color: #888;
-            white-space: nowrap;
-        }
-
-        #gap-slider {
-            flex: 1;
-            max-width: 320px;
-            -webkit-appearance: none;
-            height: 2px;
-            border-radius: 2px;
-            background: #333;
-            outline: none;
-            cursor: pointer;
-        }
-
-        #gap-slider::-webkit-slider-thumb {
-            -webkit-appearance: none;
-            width: 16px;
-            height: 16px;
-            border-radius: 50%;
-            background: #fff;
-            cursor: pointer;
-        }
-
-        #ev-display {
-            font-size: 14px;
-            font-weight: 500;
-            min-width: 56px;
-            color: #fff;
-        }
-
-        #stats {
-            display: flex;
-            gap: 32px;
-            margin-left: auto;
-        }
-
-        .stat {
+        .slider-group {
             display: flex;
             flex-direction: column;
-            align-items: flex-end;
+            align-items: center;
         }
-
-        .stat-label {
-            font-size: 11px;
-            color: #555;
-            text-transform: uppercase;
-            letter-spacing: 0.06em;
-        }
-
-        .stat-value {
-            font-size: 15px;
-            font-weight: 500;
-            color: #fff;
-            margin-top: 2px;
-        }
-
-        #canvas-wrap {
-            flex: 1;
-            width: 100%;
-            position: relative;
-        }
-
         canvas {
             display: block;
-            width: 100%;
-            height: 100%;
         }
+        .label-text {
+            font-size: 14px;
+            margin-bottom: 5px;
+            color: #aaa;
+        }
+        #dictionary {
+            position: absolute;
+            top: 100px;
+            left: 20px;
+            background: rgba(20, 20, 25, 0.85);
+            padding: 20px;
+            border-radius: 8px;
+            border: 1px solid #444;
+            max-width: 320px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+            backdrop-filter: blur(5px);
+            z-index: 5;
+        }
+        #dictionary h3 {
+            margin-top: 0;
+            color: #00ffcc;
+            border-bottom: 1px solid #444;
+            padding-bottom: 10px;
+        }
+        #dictionary ul {
+            padding-left: 20px;
+            margin-bottom: 20px;
+        }
+        #dictionary li {
+            margin-bottom: 10px;
+            line-height: 1.4;
+        }
+        .highlight {
+            color: #fff;
+            font-weight: bold;
+        }
+        .red-text { color: #ff5555; font-weight: bold; }
+        .green-text { color: #55ff55; font-weight: bold; }
+        .blue-text { color: #7777ff; font-weight: bold; }
     </style>
 </head>
 <body>
 
-<div id="top-bar">
-    <label for="gap-slider">Band gap energy</label>
-    <input type="range" id="gap-slider" min="1.8" max="3.1" step="0.05" value="2.2">
-    <span id="ev-display">2.20 eV</span>
-    <div id="stats">
-        <div class="stat">
-            <span class="stat-label">Color</span>
-            <span class="stat-value" id="stat-color">Green</span>
-        </div>
-        <div class="stat">
-            <span class="stat-label">Wavelength</span>
-            <span class="stat-value" id="stat-wl">564 nm</span>
-        </div>
+<div id="controls">
+    <div class="slider-group">
+        <div class="label-text">Band Gap Energy ($E_g$)</div>
+        <input type="range" id="gapHeight" min="1.8" max="3.1" step="0.05" value="2.0" style="width:250px">
+        <div id="evDisplay" style="font-size: 18px; font-weight: bold; margin-top: 5px;">2.00 eV</div>
     </div>
 </div>
 
-<div id="canvas-wrap">
-    <canvas id="c"></canvas>
+<div id="dictionary">
+    <h3>Quantum Dictionary</h3>
+    <ul>
+        <li><span class="highlight">The Ball:</span> An <strong>Electron</strong>.</li>
+        <li><span class="highlight">The Ledge:</span> The <strong>Conduction Band</strong> (where electrons are free to move and carry current).</li>
+        <li><span class="highlight">The Floor:</span> The <strong>Valence Band</strong> (a lower, stable energy resting state).</li>
+        <li><span class="highlight">The Drop:</span> The <strong>Band Gap</strong>. Electrons cannot exist in the middle; they must jump all the way down.</li>
+        <li><span class="highlight">The Sparks:</span> <strong>Photons (Light)</strong>. The kinetic energy lost from the fall is released as light.</li>
+    </ul>
+    
+    <h3 style="margin-top: 25px;">Why the Color Changes</h3>
+    <p>The height of the drop dictates the energy of the photon emitted:</p>
+    <div><span class="red-text">Short Drop:</span> Low Energy = Red Light</div>
+    <div style="margin: 8px 0;"><span class="green-text">Medium Drop:</span> Medium Energy = Green Light</div>
+    <div><span class="blue-text">High Drop:</span> High Energy = Blue/Violet Light</div>
 </div>
 
+<canvas id="ledCanvas"></canvas>
+
 <script>
-    const canvas = document.getElementById('c');
+    const canvas = document.getElementById('ledCanvas');
     const ctx = canvas.getContext('2d');
-    const slider = document.getElementById('gap-slider');
-    const evDisplay = document.getElementById('ev-display');
-    const statColor = document.getElementById('stat-color');
-    const statWl = document.getElementById('stat-wl');
+    const gapSlider = document.getElementById('gapHeight');
+    const evDisplay = document.getElementById('evDisplay');
 
-    let W, H, ledgeY, floorY, centerX;
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
 
-    function resize() {
-        const wrap = document.getElementById('canvas-wrap');
-        W = canvas.width = wrap.offsetWidth;
-        H = canvas.height = wrap.offsetHeight;
-        centerX = W / 2;
-        floorY = H - 80;
+    let ball = { x: canvas.width / 2 + 150, y: 0, dy: 0, radius: 12, falling: false };
+    let photons = [];
+    
+    // Physical Constants
+    const gravity = 0.5;
+    const floorY = canvas.height - 100;
+
+    function getLEDColor(ev) {
+        // Simple eV to RGB mapping
+        // 1.8 eV (Red) to 3.1 eV (Violet)
+        const ratio = (ev - 1.8) / (3.1 - 1.8);
+        const hue = 240 - (ratio * 240); // 240 (Blue) to 0 (Red)
+        return `hsl(${hue}, 100%, 50%)`;
     }
 
-    resize();
-    window.addEventListener('resize', resize);
-
-    function evToColor(ev) {
-        const t = (ev - 1.8) / (3.1 - 1.8);
-        const h = 260 - t * 260;
-        return `hsl(${h}, 90%, 60%)`;
-    }
-
-    function evToName(ev) {
-        if (ev < 2.0) return 'Red';
-        if (ev < 2.2) return 'Orange';
-        if (ev < 2.5) return 'Yellow';
-        if (ev < 2.7) return 'Green';
-        if (ev < 2.95) return 'Blue';
-        return 'Violet';
-    }
-
-    function evToWavelength(ev) {
-        return Math.round(1240 / ev);
-    }
-
-    const electrons = [];
-    let spawnTimer = 0;
-
-    function spawnElectron(ev) {
-        const gapPx = ev * 120;
-        const ly = floorY - gapPx;
-        electrons.push({
-            x: centerX + (Math.random() - 0.5) * 40,
-            y: ly,
-            vy: 0,
-            color: evToColor(ev),
-            sparks: null,
-            done: false,
-            ledgeY: ly,
-            floorY: floorY
-        });
-    }
-
-    function createSparks(x, y, color) {
-        const sparks = [];
-        for (let i = 0; i < 10; i++) {
-            const angle = (Math.PI * 2 * i / 10) - Math.PI * 0.5 + (Math.random() - 0.5) * 0.6;
-            const speed = 2.5 + Math.random() * 3;
-            sparks.push({
-                x, y,
-                vx: Math.cos(angle) * speed,
-                vy: Math.sin(angle) * speed,
-                opacity: 1,
-                r: 2.5 + Math.random() * 2,
-                color
-            });
-        }
-        return sparks;
-    }
-
-    function draw() {
-        const ev = parseFloat(slider.value);
-        const color = evToColor(ev);
-        const gapPx = ev * 120;
-        ledgeY = floorY - gapPx;
-
-        ctx.clearRect(0, 0, W, H);
-
-        const bandW = 280;
-        const bx = centerX - bandW / 2;
-
-        ctx.fillStyle = '#1a1a1f';
-        ctx.fillRect(bx, ledgeY - 1, bandW, 14);
-        ctx.fillStyle = '#1a1a1f';
-        ctx.fillRect(bx, floorY - 1, bandW, 14);
-
-        ctx.fillStyle = '#333';
-        ctx.font = '11px -apple-system, sans-serif';
-        ctx.textAlign = 'left';
-        ctx.fillText('Conduction band', bx + bandW + 16, ledgeY + 8);
-        ctx.fillText('Valence band', bx + bandW + 16, floorY + 8);
-
-        ctx.strokeStyle = '#2a2a2a';
-        ctx.lineWidth = 1;
-        ctx.setLineDash([4, 6]);
+    function drawArrow(fromX, fromY, toX, toY) {
+        const headlen = 10; 
+        const angle = Math.atan2(toY - fromY, toX - fromX);
         ctx.beginPath();
-        ctx.moveTo(bx, ledgeY - 1 + 6);
-        ctx.lineTo(bx - 60, ledgeY - 1 + 6);
+        ctx.moveTo(fromX, fromY);
+        ctx.lineTo(toX, toY);
+        ctx.lineTo(toX - headlen * Math.cos(angle - Math.PI / 6), toY - headlen * Math.sin(angle - Math.PI / 6));
+        ctx.moveTo(toX, toY);
+        ctx.lineTo(toX - headlen * Math.cos(angle + Math.PI / 6), toY - headlen * Math.sin(angle + Math.PI / 6));
         ctx.stroke();
+    }
+
+    function drawScene() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        const ev = parseFloat(gapSlider.value);
+        const gapPx = ev * 150; // Visual scaling
+        const ledgeY = floorY - gapPx;
+        const color = getLEDColor(ev);
+        const centerX = canvas.width / 2 + 150; // Shifted right to make room for panel
+
+        // Draw Band Gap Measurement
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 2;
+        drawArrow(centerX - 150, ledgeY + 10, centerX - 150, floorY - 10);
+        drawArrow(centerX - 150, floorY - 10, centerX - 150, ledgeY + 10);
+        ctx.fillStyle = color;
+        ctx.font = "bold 16px sans-serif";
+        ctx.textAlign = "right";
+        ctx.fillText(`Band Gap: ${ev.toFixed(2)} eV`, centerX - 165, ledgeY + (gapPx / 2) + 5);
+
+        // Draw Ledge (Conduction Band)
+        ctx.strokeStyle = '#555';
+        ctx.lineWidth = 1;
+        ctx.setLineDash([5, 5]);
         ctx.beginPath();
-        ctx.moveTo(bx, floorY - 1 + 6);
-        ctx.lineTo(bx - 60, floorY - 1 + 6);
+        ctx.moveTo(centerX - 120, ledgeY);
+        ctx.lineTo(centerX + 120, ledgeY);
         ctx.stroke();
         ctx.setLineDash([]);
 
-        ctx.strokeStyle = color;
-        ctx.lineWidth = 1;
-        const mx = bx - 30;
-        const arrowPad = 6;
-        ctx.beginPath();
-        ctx.moveTo(mx, ledgeY + arrowPad);
-        ctx.lineTo(mx, floorY - arrowPad);
-        ctx.stroke();
-        [ledgeY + arrowPad, floorY - arrowPad].forEach((py, i) => {
-            const dir = i === 0 ? 1 : -1;
-            ctx.beginPath();
-            ctx.moveTo(mx - 5, py + dir * 7);
-            ctx.lineTo(mx, py);
-            ctx.lineTo(mx + 5, py + dir * 7);
-            ctx.strokeStyle = color;
-            ctx.lineWidth = 1;
-            ctx.stroke();
-        });
+        ctx.fillStyle = '#333';
+        ctx.fillRect(centerX - 120, ledgeY, 240, 10);
+        ctx.fillStyle = '#aaa';
+        ctx.textAlign = "center";
+        ctx.fillText("CONDUCTION BAND", centerX, ledgeY - 20);
 
+        // Draw Ground (Valence Band)
+        ctx.fillStyle = '#222';
+        ctx.fillRect(0, floorY, canvas.width, canvas.height - floorY);
         ctx.fillStyle = color;
-        ctx.font = '12px -apple-system, sans-serif';
-        ctx.textAlign = 'right';
-        ctx.fillText(`${ev.toFixed(2)} eV`, mx - 8, ledgeY + gapPx / 2 + 5);
+        ctx.globalAlpha = 0.3;
+        ctx.fillRect(0, floorY, canvas.width, 2); // Glow on floor
+        ctx.globalAlpha = 1.0;
+        ctx.fillStyle = '#aaa';
+        ctx.textAlign = "center";
+        ctx.fillText("VALENCE BAND", centerX, floorY + 30);
 
-        spawnTimer++;
-        if (spawnTimer > 55) {
-            spawnElectron(ev);
-            spawnTimer = 0;
+        // Update & Draw Ball
+        if (!ball.falling) {
+            ball.y = ledgeY - ball.radius;
+            ball.x = centerX;
+            // Auto-drop logic
+            if (Math.random() < 0.02) ball.falling = true;
+        } else {
+            ball.dy += gravity;
+            ball.y += ball.dy;
+
+            if (ball.y + ball.radius >= floorY) {
+                ball.y = floorY - ball.radius;
+                // Emit Photon
+                for(let i=0; i<8; i++) {
+                    photons.push({
+                        x: ball.x,
+                        y: ball.y,
+                        r: 4 + Math.random() * 3,
+                        opacity: 1,
+                        color: color,
+                        vx: (Math.random() - 0.5) * 12,
+                        vy: (Math.random() - 1) * 8 // mostly upward sparks
+                    });
+                }
+                // Reset Ball
+                ball.falling = false;
+                ball.dy = 0;
+            }
         }
 
-        for (let i = electrons.length - 1; i >= 0; i--) {
-            const e = electrons[i];
+        // Draw Ball
+        ctx.beginPath();
+        ctx.arc(ball.x, ball.y, ball.radius, 0, Math.PI * 2);
+        ctx.fillStyle = "white";
+        ctx.shadowBlur = 15;
+        ctx.shadowColor = "white";
+        ctx.fill();
+        ctx.shadowBlur = 0;
+        
+        // Label Ball
+        ctx.fillStyle = "white";
+        ctx.font = "14px sans-serif";
+        ctx.textAlign = "left";
+        ctx.fillText("← Electron", ball.x + 20, ball.y + 5);
 
-            if (e.sparks) {
-                let alive = false;
-                for (const s of e.sparks) {
-                    s.x += s.vx;
-                    s.y += s.vy;
-                    s.vy += 0.08;
-                    s.opacity -= 0.028;
-                    if (s.opacity > 0) {
-                        alive = true;
-                        ctx.beginPath();
-                        ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
-                        ctx.fillStyle = s.color;
-                        ctx.globalAlpha = s.opacity;
-                        ctx.fill();
-                        ctx.globalAlpha = 1;
-                    }
-                }
-                if (!alive) electrons.splice(i, 1);
-                continue;
-            }
-
-            e.vy += 0.45;
-            e.y += e.vy;
-
-            if (e.y + 7 >= e.floorY) {
-                e.y = e.floorY - 7;
-                e.sparks = createSparks(e.x, e.y, e.color);
-                continue;
-            }
+        // Draw Photons (The "Sound" or Light)
+        for (let i = photons.length - 1; i >= 0; i--) {
+            let p = photons[i];
+            p.x += p.vx;
+            p.y += p.vy;
+            p.opacity -= 0.03; // Fade out
 
             ctx.beginPath();
-            ctx.arc(e.x, e.y, 7, 0, Math.PI * 2);
-            ctx.fillStyle = '#ffffff';
+            ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+            ctx.fillStyle = p.color;
+            ctx.globalAlpha = p.opacity;
+            ctx.shadowBlur = 10;
+            ctx.shadowColor = p.color;
             ctx.fill();
+            
+            // Label photons occasionally for clarity
+            if (p.opacity > 0.8 && i % 4 === 0) {
+                 ctx.fillStyle = "white";
+                 ctx.font = "12px sans-serif";
+                 ctx.fillText("Photon", p.x + 10, p.y);
+            }
+            
+            if (p.opacity <= 0) photons.splice(i, 1);
         }
+        ctx.globalAlpha = 1.0;
+        ctx.shadowBlur = 0;
 
-        requestAnimationFrame(draw);
+        requestAnimationFrame(drawScene);
     }
 
-    slider.addEventListener('input', function () {
-        const ev = parseFloat(this.value);
-        evDisplay.textContent = ev.toFixed(2) + ' eV';
-        statColor.textContent = evToName(ev);
-        statWl.textContent = evToWavelength(ev) + ' nm';
-        statWl.style.color = evToColor(ev);
-        statColor.style.color = evToColor(ev);
-    });
+    gapSlider.oninput = function() {
+        evDisplay.innerText = `${parseFloat(this.value).toFixed(2)} eV`;
+    };
 
-    const initEv = parseFloat(slider.value);
-    statColor.textContent = evToName(initEv);
-    statWl.textContent = evToWavelength(initEv) + ' nm';
-    statWl.style.color = evToColor(initEv);
-    statColor.style.color = evToColor(initEv);
+    window.onresize = function() {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+    };
 
-    draw();
+    drawScene();
 </script>
 
 </body>
