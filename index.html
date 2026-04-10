@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LED Band Gap Simulator - Visual Quantum Physics</title>
+    <title>LED Band Gap Simulator - Circuit Flow</title>
     <style>
         body {
             margin: 0;
@@ -22,7 +22,7 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            gap: 40px;
+            gap: 20px;
             border-bottom: 1px solid #222;
             z-index: 10;
         }
@@ -30,36 +30,38 @@
             display: flex;
             flex-direction: column;
             align-items: center;
+            margin-left: 20px;
         }
-        #dropBtn {
-            padding: 12px 24px;
-            background: #00ffcc;
+        button {
+            padding: 12px 20px;
             border: none;
-            color: black;
             font-weight: bold;
-            font-size: 16px;
+            font-size: 15px;
             border-radius: 6px;
             cursor: pointer;
-            transition: background 0.2s;
+            transition: all 0.2s;
+        }
+        #dropBtn {
+            background: #00ffcc;
+            color: black;
             box-shadow: 0 0 15px rgba(0, 255, 204, 0.4);
         }
-        #dropBtn:hover:not(:disabled) {
-            background: #00ccaa;
+        #dropBtn:hover { background: #00ccaa; }
+        
+        #circuitBtn {
+            background: #ffaa00;
+            color: black;
+            box-shadow: 0 0 15px rgba(255, 170, 0, 0.4);
         }
-        #dropBtn:disabled {
-            background: #333;
-            color: #666;
-            cursor: not-allowed;
-            box-shadow: none;
+        #circuitBtn.active {
+            background: #ff5555;
+            box-shadow: 0 0 20px rgba(255, 85, 85, 0.6);
+            color: white;
         }
-        canvas {
-            display: block;
-        }
-        .label-text {
-            font-size: 14px;
-            margin-bottom: 5px;
-            color: #aaa;
-        }
+
+        canvas { display: block; }
+        .label-text { font-size: 14px; margin-bottom: 5px; color: #aaa; }
+        
         #dictionary {
             position: absolute;
             top: 120px;
@@ -79,24 +81,16 @@
             border-bottom: 1px solid #444;
             padding-bottom: 10px;
         }
-        #dictionary ul {
-            padding-left: 20px;
-            margin-bottom: 20px;
-        }
-        #dictionary li {
-            margin-bottom: 10px;
-            line-height: 1.5;
-        }
+        #dictionary ul { padding-left: 20px; margin-bottom: 20px; }
+        #dictionary li { margin-bottom: 10px; line-height: 1.5; }
         .highlight { color: #fff; font-weight: bold; }
-        .red-text { color: #ff5555; font-weight: bold; }
-        .green-text { color: #55ff55; font-weight: bold; }
-        .blue-text { color: #7777ff; font-weight: bold; }
     </style>
 </head>
 <body>
 
 <div id="controls">
-    <button id="dropBtn">Drop Electron</button>
+    <button id="dropBtn">Single Drop (Manual)</button>
+    <button id="circuitBtn">Turn On Battery (Continuous Circuit)</button>
 
     <div class="slider-group">
         <div class="label-text">Band Gap Energy (Height of the fall)</div>
@@ -106,20 +100,12 @@
 </div>
 
 <div id="dictionary">
-    <h3>The Apartment Analogy</h3>
+    <h3>The Continuous Flow</h3>
     <ul>
-        <li><span class="highlight">The Ball:</span> An <strong>Electron (-)</strong>.</li>
-        <li><span class="highlight">The Ledge:</span> The <strong>Conduction Band</strong> (The Upper Highway). Electrons here are free to carry current.</li>
-        <li><span class="highlight">The Floor:</span> The <strong>Valence Band</strong> (The Lower Garage). Notice the empty "Holes" (+) waiting for an electron to park.</li>
-        <li><span class="highlight">The Drop:</span> The <strong>Band Gap</strong>. Electrons cannot float in the air; they must jump all the way down.</li>
-        <li><span class="highlight">The Sparks:</span> <strong>Photons (Light)</strong>. The energy from the fall is thrown out as a flash of light.</li>
+        <li><span class="highlight">The Battery:</span> Acts like a water pump. It constantly forces electrons up to the top highway.</li>
+        <li><span class="highlight">The Current:</span> You can now see electrons streaming across the Conduction Band to find a hole.</li>
+        <li><span class="highlight">Continuous Light:</span> Because millions of electrons drop per second, an LED produces a steady, continuous beam of light rather than single flashes.</li>
     </ul>
-    
-    <h3 style="margin-top: 25px;">Why the Color Changes</h3>
-    <p>The height of the drop dictates the energy of the photon emitted:</p>
-    <div><span class="red-text">Short Drop:</span> Low Energy = Red Light</div>
-    <div style="margin: 8px 0;"><span class="green-text">Medium Drop:</span> Medium Energy = Green Light</div>
-    <div><span class="blue-text">High Drop:</span> High Energy = Blue Light</div>
 </div>
 
 <canvas id="ledCanvas"></canvas>
@@ -130,22 +116,33 @@
     const gapSlider = document.getElementById('gapHeight');
     const evDisplay = document.getElementById('evDisplay');
     const dropBtn = document.getElementById('dropBtn');
+    const circuitBtn = document.getElementById('circuitBtn');
 
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
 
-    let ball = { x: canvas.width / 2 + 100, y: 0, dy: 0, radius: 14, falling: false, landed: false };
+    let electrons = []; // Now an array to handle many electrons!
     let photons = [];
     
     const gravity = 0.5;
     const floorY = canvas.height - 120;
     let animationTime = 0;
+    let isCircuitActive = false;
 
+    // Single Drop
     dropBtn.addEventListener('click', () => {
-        if (!ball.falling) {
-            ball.falling = true;
-            ball.landed = false;
-            dropBtn.disabled = true; 
+        spawnElectron(canvas.width / 2 + 50); // Drop right in the middle
+    });
+
+    // Continuous Circuit Toggle
+    circuitBtn.addEventListener('click', () => {
+        isCircuitActive = !isCircuitActive;
+        if (isCircuitActive) {
+            circuitBtn.innerText = "Turn Off Battery";
+            circuitBtn.classList.add("active");
+        } else {
+            circuitBtn.innerText = "Turn On Battery (Continuous Circuit)";
+            circuitBtn.classList.remove("active");
         }
     });
 
@@ -155,75 +152,56 @@
         return `hsl(${hue}, 100%, 60%)`;
     }
 
-    function drawArrow(fromX, fromY, toX, toY) {
-        const headlen = 10; 
-        const angle = Math.atan2(toY - fromY, toX - fromX);
-        ctx.beginPath();
-        ctx.moveTo(fromX, fromY);
-        ctx.lineTo(toX, toY);
-        ctx.lineTo(toX - headlen * Math.cos(angle - Math.PI / 6), toY - headlen * Math.sin(angle - Math.PI / 6));
-        ctx.moveTo(toX, toY);
-        ctx.lineTo(toX - headlen * Math.cos(angle + Math.PI / 6), toY - headlen * Math.sin(angle + Math.PI / 6));
-        ctx.stroke();
+    function spawnElectron(startX) {
+        const ev = parseFloat(gapSlider.value);
+        const ledgeY = floorY - (ev * 150);
+        electrons.push({
+            x: startX,
+            y: ledgeY - 14,
+            dy: 0,
+            radius: 14,
+            falling: false
+        });
     }
 
-    // NEW: Function to draw the light spectrum graph
     function drawSpectrumGraph(ev) {
         const width = 320;
         const height = 90;
-        const x = canvas.width - width - 20; // 20px from right edge
-        const y = 120; // 120px from top
+        const x = canvas.width - width - 20; 
+        const y = 120; 
 
-        // Panel Background
         ctx.fillStyle = "rgba(15, 15, 20, 0.9)";
         ctx.strokeStyle = "#444";
         ctx.lineWidth = 1;
-        
         ctx.beginPath();
         ctx.roundRect ? ctx.roundRect(x, y, width, height, 8) : ctx.rect(x, y, width, height);
         ctx.fill();
         ctx.stroke();
 
-        // Title
         ctx.fillStyle = "white";
         ctx.font = "bold 14px sans-serif";
         ctx.textAlign = "center";
-        ctx.fillText("Photon Energy Graph (Visible Spectrum)", x + width / 2, y + 25);
+        ctx.fillText("Photon Energy Graph", x + width / 2, y + 25);
 
-        // Draw Spectrum Gradient Bar
-        const barX = x + 20;
-        const barY = y + 40;
-        const barW = width - 40;
-        const barH = 20;
+        const barX = x + 20, barY = y + 40, barW = width - 40, barH = 20;
 
         let gradient = ctx.createLinearGradient(barX, 0, barX + barW, 0);
-        gradient.addColorStop(0, "hsl(0, 100%, 50%)");     // Red (1.8 eV)
-        gradient.addColorStop(0.25, "hsl(60, 100%, 50%)"); // Yellow
-        gradient.addColorStop(0.5, "hsl(120, 100%, 50%)");// Green
-        gradient.addColorStop(0.75, "hsl(180, 100%, 50%)");// Cyan
-        gradient.addColorStop(1, "hsl(240, 100%, 50%)");   // Blue (3.1 eV)
+        gradient.addColorStop(0, "hsl(0, 100%, 50%)");     
+        gradient.addColorStop(0.25, "hsl(60, 100%, 50%)"); 
+        gradient.addColorStop(0.5, "hsl(120, 100%, 50%)");
+        gradient.addColorStop(0.75, "hsl(180, 100%, 50%)");
+        gradient.addColorStop(1, "hsl(240, 100%, 50%)");   
 
         ctx.fillStyle = gradient;
         ctx.fillRect(barX, barY, barW, barH);
         
-        // Outline for the bar
         ctx.strokeStyle = "#fff";
         ctx.lineWidth = 1;
         ctx.strokeRect(barX, barY, barW, barH);
 
-        // Labels
-        ctx.fillStyle = "#aaa";
-        ctx.font = "12px sans-serif";
-        ctx.textAlign = "left";
-        ctx.fillText("Low (1.8 eV)", barX, barY + 35);
-        ctx.textAlign = "right";
-        ctx.fillText("High (3.1 eV)", barX + barW, barY + 35);
-
-        // The Sliding Indicator Marker
         const ratio = (ev - 1.8) / (3.1 - 1.8);
         const markerX = barX + (ratio * barW);
         
-        // Marker Line
         ctx.strokeStyle = "white";
         ctx.lineWidth = 3;
         ctx.beginPath();
@@ -231,7 +209,6 @@
         ctx.lineTo(markerX, barY + barH + 5);
         ctx.stroke();
 
-        // Marker Triangle (Top)
         ctx.fillStyle = "white";
         ctx.beginPath();
         ctx.moveTo(markerX - 6, barY - 10);
@@ -239,21 +216,12 @@
         ctx.lineTo(markerX, barY);
         ctx.fill();
         
-        // Live eV readout above the marker
-        ctx.fillStyle = "white";
         ctx.font = "bold 13px sans-serif";
-        ctx.textAlign = "center";
-        
-        // Keep text inside the box boundaries
-        let textX = markerX;
-        if (textX < barX + 20) textX = barX + 20;
-        if (textX > barX + barW - 20) textX = barX + barW - 20;
-        
-        ctx.fillText(`${ev.toFixed(2)} eV`, textX, barY - 15);
+        ctx.fillText(`${ev.toFixed(2)} eV`, markerX, barY - 15);
     }
 
     function drawScene() {
-        animationTime += 1;
+        animationTime++;
         ctx.clearRect(0, 0, canvas.width, canvas.height);
 
         const ev = parseFloat(gapSlider.value);
@@ -262,152 +230,103 @@
         const color = getLEDColor(ev);
         const centerX = canvas.width / 2 + 50; 
 
-        // 1. Draw Spectrum Graph Panel
+        // Auto-spawn electrons if Battery is ON
+        if (isCircuitActive && animationTime % 30 === 0) {
+            spawnElectron(centerX - 180); // Spawn on the left edge of the highway
+        }
+
         drawSpectrumGraph(ev);
 
-        // 2. Draw Band Gap Measurement & Forbidden Zone
-        ctx.fillStyle = "rgba(255, 50, 50, 0.05)";
-        ctx.fillRect(0, ledgeY + 15, canvas.width, floorY - ledgeY - 30);
+        // Backgrounds for Bands
+        ctx.fillStyle = '#2a2a35'; // Conduction Band
+        ctx.fillRect(centerX - 200, ledgeY - 10, 400, 25);
+        ctx.fillStyle = '#111'; // Valence Band
+        ctx.fillRect(0, floorY, canvas.width, canvas.height - floorY);
         
-        ctx.fillStyle = "rgba(255, 50, 50, 0.3)";
-        ctx.font = "italic 20px sans-serif";
-        ctx.textAlign = "center";
-        ctx.fillText("FORBIDDEN ZONE (No Electrons Allowed)", centerX, ledgeY + (gapPx / 2) + 5);
-
-        ctx.strokeStyle = color;
-        ctx.lineWidth = 2;
-        drawArrow(centerX - 200, ledgeY + 15, centerX - 200, floorY - 15);
-        drawArrow(centerX - 200, floorY - 15, centerX - 200, ledgeY + 15);
-        ctx.fillStyle = color;
-        ctx.font = "bold 16px sans-serif";
-        ctx.textAlign = "right";
-        ctx.fillText(`Band Gap: ${ev.toFixed(2)} eV`, centerX - 215, ledgeY + (gapPx / 2) + 5);
-
-        // 3. Draw Conduction Band (Free flowing current)
-        ctx.fillStyle = '#2a2a35';
-        ctx.fillRect(centerX - 150, ledgeY - 10, 300, 25);
-        ctx.fillStyle = '#aaa';
-        ctx.textAlign = "center";
-        ctx.fillText("CONDUCTION BAND (The Upper Highway)", centerX, ledgeY - 25);
-        
-        // Flowing electrons in conduction band
-        ctx.fillStyle = "#00ffff";
-        for (let i = 0; i < 5; i++) {
-            let movingX = (centerX - 150) + ((animationTime * 2 + i * 60) % 300);
+        // Flowing dots in conduction band (Visual current)
+        ctx.fillStyle = "rgba(0, 255, 255, 0.2)";
+        for (let i = 0; i < 8; i++) {
+            let movingX = (centerX - 200) + ((animationTime * 2 + i * 50) % 400);
             ctx.beginPath();
             ctx.arc(movingX, ledgeY + 2, 4, 0, Math.PI * 2);
             ctx.fill();
         }
 
-        // 4. Draw Valence Band (Stable resting state with "Holes")
-        ctx.fillStyle = '#111';
-        ctx.fillRect(0, floorY, canvas.width, canvas.height - floorY);
-        ctx.fillStyle = color;
-        ctx.globalAlpha = 0.2;
-        ctx.fillRect(0, floorY, canvas.width, 3);
-        ctx.globalAlpha = 1.0;
+        // Labels
         ctx.fillStyle = '#aaa';
+        ctx.font = "14px sans-serif";
         ctx.textAlign = "center";
-        ctx.fillText("VALENCE BAND (The Lower Garage)", centerX, floorY + 60);
+        ctx.fillText("CONDUCTION BAND (Electrons flowing from battery)", centerX, ledgeY - 25);
+        ctx.fillText("VALENCE BAND (Holes waiting for electrons)", centerX, floorY + 60);
 
-        // Draw "Holes" (+) in the valence band
-        ctx.strokeStyle = "#ff4444";
-        ctx.lineWidth = 2;
-        for(let i = -3; i <= 3; i++) {
-            let hx = centerX + i * 50;
-            let hy = floorY + 15;
-            
-            // If the main electron landed here, don't draw the hole (it's filled!)
-            if (ball.landed && i === 0) continue; 
+        // Update & Draw Electrons
+        for (let i = electrons.length - 1; i >= 0; i--) {
+            let e = electrons[i];
 
+            if (!e.falling) {
+                // If it spawned on the left, make it roll to the middle
+                if (e.x < centerX) {
+                    e.x += 3; // Rolling speed
+                } else {
+                    e.falling = true; // Drop when it hits the center!
+                }
+                e.y = ledgeY - e.radius; // Keep it on the ledge if gap changes
+            } else {
+                e.dy += gravity;
+                e.y += e.dy;
+
+                // Hit the bottom (Recombination!)
+                if (e.y + e.radius >= floorY + 15) {
+                    // Emit Photons
+                    for(let p=0; p<4; p++) {
+                        photons.push({
+                            x: e.x,
+                            y: floorY,
+                            angle: Math.PI + (Math.random() * Math.PI), // Splash upwards
+                            speed: 3 + Math.random() * 4,
+                            phase: Math.random() * Math.PI * 2,
+                            opacity: 1,
+                            color: color,
+                            life: 0
+                        });
+                    }
+                    // Remove this electron (it joined the valence band and flowed away)
+                    electrons.splice(i, 1);
+                    continue; 
+                }
+            }
+
+            // Draw the Electron
             ctx.beginPath();
-            ctx.arc(hx, hy, 12, 0, Math.PI * 2);
-            ctx.stroke();
-            ctx.fillStyle = "#ff4444";
-            ctx.font = "14px monospace";
+            ctx.arc(e.x, e.y, e.radius, 0, Math.PI * 2);
+            ctx.fillStyle = "#00ffff"; 
+            ctx.shadowBlur = 10;
+            ctx.shadowColor = "#00ffff";
+            ctx.fill();
+            ctx.shadowBlur = 0;
+            
+            ctx.fillStyle = "black";
+            ctx.font = "bold 20px monospace";
             ctx.textAlign = "center";
             ctx.textBaseline = "middle";
-            ctx.fillText("+", hx, hy + 1);
+            ctx.fillText("-", e.x, e.y + 2);
         }
 
-        // 5. Update & Draw Ball (Electron)
-        if (!ball.falling && !ball.landed) {
-            ball.y = ledgeY - ball.radius;
-            ball.x = centerX;
-        } else if (ball.falling) {
-            ball.dy += gravity;
-            ball.y += ball.dy;
-
-            // Target the center hole in the valence band
-            if (ball.y + ball.radius >= floorY + 15) {
-                ball.y = floorY + 15;
-                ball.landed = true;
-                ball.falling = false;
-                
-                // Emit Photons (Waves)
-                for(let i=0; i<6; i++) {
-                    let angle = Math.PI + (Math.random() * Math.PI); // Upward angles
-                    photons.push({
-                        x: ball.x,
-                        y: ball.y - 15,
-                        angle: angle,
-                        speed: 3 + Math.random() * 4,
-                        phase: Math.random() * Math.PI * 2,
-                        opacity: 1,
-                        color: color,
-                        life: 0
-                    });
-                }
-                
-                setTimeout(() => {
-                    ball.landed = false;
-                    ball.dy = 0;
-                    dropBtn.disabled = false;
-                }, 2000); // Reset after 2 seconds
-            }
-        }
-
-        // Draw the main Electron
-        ctx.beginPath();
-        ctx.arc(ball.x, ball.y, ball.radius, 0, Math.PI * 2);
-        ctx.fillStyle = "#00ffff"; // Electron Blue/Cyan
-        ctx.shadowBlur = 15;
-        ctx.shadowColor = "#00ffff";
-        ctx.fill();
-        ctx.shadowBlur = 0;
-        
-        // Draw the Negative charge (-) inside the electron
-        ctx.fillStyle = "black";
-        ctx.font = "bold 20px monospace";
-        ctx.textAlign = "center";
-        ctx.textBaseline = "middle";
-        ctx.fillText("-", ball.x, ball.y + 2);
-        
-        ctx.fillStyle = "white";
-        ctx.font = "14px sans-serif";
-        ctx.textAlign = "left";
-        ctx.fillText("← Electron", ball.x + 25, ball.y);
-
-        // 6. Draw Photons (Squiggly Light Waves)
+        // Update & Draw Photons (Light Waves)
         for (let i = photons.length - 1; i >= 0; i--) {
             let p = photons[i];
             p.x += Math.cos(p.angle) * p.speed;
             p.y += Math.sin(p.angle) * p.speed;
             p.life += 0.2;
-            p.opacity -= 0.015;
+            p.opacity -= 0.02;
 
             ctx.beginPath();
-            let waveAmplitude = 6;
-            let waveFrequency = 0.5;
-            
-            // Draw a sine wave path for the photon
-            for(let w = 0; w < 30; w++) {
+            let waveFreq = 0.5;
+            for(let w = 0; w < 25; w++) {
                 let wx = p.x - Math.cos(p.angle) * w; 
                 let wy = p.y - Math.sin(p.angle) * w;
-                
-                // Add perpendicular sine wave offset
                 let perpAngle = p.angle + Math.PI / 2;
-                let offset = Math.sin(w * waveFrequency - p.life) * waveAmplitude;
+                let offset = Math.sin(w * waveFreq - p.life) * 5; // Amplitude
                 
                 wx += Math.cos(perpAngle) * offset;
                 wy += Math.sin(perpAngle) * offset;
@@ -422,13 +341,6 @@
             ctx.shadowBlur = 10;
             ctx.shadowColor = p.color;
             ctx.stroke();
-            
-            if (p.opacity > 0.8 && i % 3 === 0) {
-                 ctx.fillStyle = "white";
-                 ctx.font = "12px sans-serif";
-                 ctx.globalAlpha = p.opacity;
-                 ctx.fillText("Photon", p.x + 10, p.y - 10);
-            }
             
             if (p.opacity <= 0) photons.splice(i, 1);
         }
