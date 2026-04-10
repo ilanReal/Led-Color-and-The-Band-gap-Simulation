@@ -21,7 +21,8 @@
             width: 100%;
             display: flex;
             justify-content: center;
-            gap: 30px;
+            align-items: center;
+            gap: 40px;
             border-bottom: 1px solid #333;
             z-index: 10;
         }
@@ -29,6 +30,27 @@
             display: flex;
             flex-direction: column;
             align-items: center;
+        }
+        #dropBtn {
+            padding: 12px 24px;
+            background: #00ffcc;
+            border: none;
+            color: black;
+            font-weight: bold;
+            font-size: 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background 0.2s;
+            box-shadow: 0 0 10px rgba(0, 255, 204, 0.3);
+        }
+        #dropBtn:hover:not(:disabled) {
+            background: #00ccaa;
+        }
+        #dropBtn:disabled {
+            background: #444;
+            color: #888;
+            cursor: not-allowed;
+            box-shadow: none;
         }
         canvas {
             display: block;
@@ -40,7 +62,7 @@
         }
         #dictionary {
             position: absolute;
-            top: 100px;
+            top: 120px;
             left: 20px;
             background: rgba(20, 20, 25, 0.85);
             padding: 20px;
@@ -77,6 +99,8 @@
 <body>
 
 <div id="controls">
+    <button id="dropBtn">Drop Electron</button>
+
     <div class="slider-group">
         <div class="label-text">Band Gap Energy ($E_g$)</div>
         <input type="range" id="gapHeight" min="1.8" max="3.1" step="0.05" value="2.0" style="width:250px">
@@ -108,6 +132,7 @@
     const ctx = canvas.getContext('2d');
     const gapSlider = document.getElementById('gapHeight');
     const evDisplay = document.getElementById('evDisplay');
+    const dropBtn = document.getElementById('dropBtn');
 
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
@@ -118,6 +143,14 @@
     // Physical Constants
     const gravity = 0.5;
     const floorY = canvas.height - 100;
+
+    // Handle Button Click
+    dropBtn.addEventListener('click', () => {
+        if (!ball.falling) {
+            ball.falling = true;
+            dropBtn.disabled = true; // Disable button while falling
+        }
+    });
 
     function getLEDColor(ev) {
         // Simple eV to RGB mapping
@@ -189,8 +222,6 @@
         if (!ball.falling) {
             ball.y = ledgeY - ball.radius;
             ball.x = centerX;
-            // Auto-drop logic
-            if (Math.random() < 0.02) ball.falling = true;
         } else {
             ball.dy += gravity;
             ball.y += ball.dy;
@@ -209,9 +240,10 @@
                         vy: (Math.random() - 1) * 8 // mostly upward sparks
                     });
                 }
-                // Reset Ball
+                // Reset Ball state
                 ball.falling = false;
                 ball.dy = 0;
+                dropBtn.disabled = false; // Re-enable button for the next drop
             }
         }
 
