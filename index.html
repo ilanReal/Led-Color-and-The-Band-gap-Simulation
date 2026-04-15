@@ -96,7 +96,12 @@
 <body>
 
 <div id="controls">
-    <button id="dropBtn">Drop Electron</button>
+    <div style="display: flex; flex-direction: column; gap: 10px; align-items: center;">
+        <button id="dropBtn">Drop Electron</button>
+        <label style="cursor: pointer; font-size: 14px;">
+            <input type="checkbox" id="continuousMode"> Continuous
+        </label>
+    </div>
 
     <div class="slider-group">
         <div class="label-text">Band Gap Energy (Height of the fall)</div>
@@ -130,6 +135,7 @@
     const gapSlider = document.getElementById('gapHeight');
     const evDisplay = document.getElementById('evDisplay');
     const dropBtn = document.getElementById('dropBtn');
+    const continuousMode = document.getElementById('continuousMode');
 
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
@@ -141,17 +147,22 @@
     const floorY = canvas.height - 120;
     let animationTime = 0;
 
-    dropBtn.addEventListener('click', () => {
-        if (!ball.falling) {
+    function triggerDrop() {
+        if (!ball.falling && !ball.landed) {
             ball.falling = true;
             ball.landed = false;
             dropBtn.disabled = true; 
         }
+    }
+
+    dropBtn.addEventListener('click', triggerDrop);
+
+    continuousMode.addEventListener('change', () => {
+        if (continuousMode.checked) triggerDrop();
     });
 
     function getLEDColor(ev) {
         const ratio = (ev - 1.8) / (3.1 - 1.8);
-        // FIXED: Multiply ratio by 240 so low eV = 0 (Red) and high eV = 240 (Blue)
         const hue = ratio * 240; 
         return `hsl(${hue}, 100%, 60%)`;
     }
@@ -344,26 +355,28 @@
                 ball.landed = true;
                 ball.falling = false;
                 
-                // Emit Photons (Waves)
-                for(let i=0; i<6; i++) {
-                    let angle = Math.PI + (Math.random() * Math.PI); // Upward angles
-                    photons.push({
-                        x: ball.x,
-                        y: ball.y - 15,
-                        angle: angle,
-                        speed: 3 + Math.random() * 4,
-                        phase: Math.random() * Math.PI * 2,
-                        opacity: 1,
-                        color: color,
-                        life: 0
-                    });
-                }
+                // Emit ONE Photon (Wave) shooting generally upward
+                photons.push({
+                    x: ball.x,
+                    y: ball.y - 15,
+                    angle: Math.PI * 1.5 + (Math.random() * 0.4 - 0.2),
+                    speed: 4,
+                    phase: Math.random() * Math.PI * 2,
+                    opacity: 1,
+                    color: color,
+                    life: 0
+                });
                 
+                // Reset timer (shortened to 1 second for better continuous flow)
                 setTimeout(() => {
                     ball.landed = false;
                     ball.dy = 0;
-                    dropBtn.disabled = false;
-                }, 2000); // Reset after 2 seconds
+                    if (continuousMode.checked) {
+                        triggerDrop();
+                    } else {
+                        dropBtn.disabled = false;
+                    }
+                }, 1000); 
             }
         }
 
@@ -423,7 +436,7 @@
             ctx.shadowColor = p.color;
             ctx.stroke();
             
-            if (p.opacity > 0.8 && i % 3 === 0) {
+            if (p.opacity > 0.8) {
                  ctx.fillStyle = "white";
                  ctx.font = "12px sans-serif";
                  ctx.globalAlpha = p.opacity;
