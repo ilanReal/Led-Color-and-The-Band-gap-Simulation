@@ -203,6 +203,7 @@
             color: #aaa;
             font-weight: 600;
             text-transform: uppercase;
+            margin-bottom: 5px;
         }
 
         /* Custom Range Slider */
@@ -210,14 +211,14 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            width: 300px;
+            width: 200px; /* narrowed slightly to fit the new slider */
         }
 
         input[type=range] {
             -webkit-appearance: none;
             width: 100%;
             background: transparent;
-            margin: 15px 0;
+            margin: 10px 0;
         }
 
         input[type=range]:focus {
@@ -254,6 +255,7 @@
             font-weight: 800;
             color: white;
             text-shadow: 0 0 10px rgba(255,255,255,0.3);
+            margin-top: 5px;
         }
     </style>
 </head>
@@ -292,10 +294,15 @@
                 <input type="checkbox" id="continuousMode">
                 <span class="slider"></span>
             </label>
-            <span class="toggle-label">Continuous Stream</span>
+            <span class="toggle-label" style="margin-bottom: 0;">Continuous</span>
         </div>
 
         <div class="slider-group">
+            <div class="toggle-label">Flow Rate</div>
+            <input type="range" id="flowRate" min="2" max="60" step="1" value="45">
+        </div>
+
+        <div class="slider-group" style="width: 250px;">
             <div class="toggle-label">Band Gap (Drop Height)</div>
             <input type="range" id="gapHeight" min="1.8" max="3.1" step="0.05" value="2.0">
             <div id="evDisplay">2.00 eV</div>
@@ -313,6 +320,7 @@
     const evDisplay = document.getElementById('evDisplay');
     const dropBtn = document.getElementById('dropBtn');
     const continuousMode = document.getElementById('continuousMode');
+    const flowRateSlider = document.getElementById('flowRate');
     const spectrumMarker = document.getElementById('spectrum-marker');
 
     // Canvas Sizing
@@ -449,8 +457,10 @@
         ctx.stroke();
         ctx.setLineDash([]);
 
-        // Continuous Spawning Logic
-        if (continuousMode.checked && frameCount % 15 === 0) {
+        // Continuous Spawning Logic tied to the new slider
+        // Higher slider value = smaller interval = faster spawning
+        const currentFlowDelay = 65 - parseInt(flowRateSlider.value); 
+        if (continuousMode.checked && frameCount % currentFlowDelay === 0) {
             spawnElectron();
         }
 
