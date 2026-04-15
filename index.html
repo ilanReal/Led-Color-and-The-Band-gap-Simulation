@@ -4,423 +4,566 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>LED Band Gap Simulator - Visual Quantum Physics</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
     <style>
+        :root {
+            --primary: #00ffcc;
+            --bg-dark: #0a0b10;
+            --panel-bg: rgba(20, 22, 28, 0.6);
+            --panel-border: rgba(255, 255, 255, 0.1);
+        }
+
         body {
             margin: 0;
-            background: #050508;
+            background: var(--bg-dark);
             color: white;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: 'Inter', sans-serif;
+            overflow: hidden;
+            user-select: none;
+        }
+
+        canvas {
+            display: block;
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 1;
+        }
+
+        /* Glassmorphism Panels */
+        .glass-panel {
+            position: absolute;
+            background: var(--panel-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--panel-border);
+            border-radius: 16px;
+            padding: 24px;
+            z-index: 10;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+
+        /* Dictionary Panel - Top Left */
+        #dictionary {
+            top: 20px;
+            left: 20px;
+            width: 320px;
+        }
+
+        #dictionary h3 {
+            margin: 0 0 15px 0;
+            color: var(--primary);
+            font-size: 16px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            border-bottom: 1px solid var(--panel-border);
+            padding-bottom: 10px;
+        }
+
+        #dictionary p, #dictionary li {
+            font-size: 14px;
+            line-height: 1.6;
+            color: #ccc;
+            margin-bottom: 8px;
+        }
+
+        #dictionary ul {
+            padding-left: 20px;
+            margin: 0 0 20px 0;
+        }
+
+        .highlight { color: #fff; font-weight: 600; }
+
+        /* Spectrum Graph Panel - Top Right */
+        #spectrum-panel {
+            top: 20px;
+            right: 20px;
+            width: 320px;
+        }
+
+        .spectrum-bar {
+            height: 16px;
+            background: linear-gradient(to right, 
+                hsl(0, 100%, 50%), 
+                hsl(60, 100%, 50%), 
+                hsl(120, 100%, 50%), 
+                hsl(180, 100%, 50%), 
+                hsl(240, 100%, 50%)
+            );
+            border-radius: 8px;
+            position: relative;
+            margin: 20px 0 10px 0;
+            border: 1px solid rgba(255,255,255,0.3);
+        }
+
+        #spectrum-marker {
+            position: absolute;
+            width: 4px;
+            height: 28px;
+            background: white;
+            top: -6px;
+            border-radius: 2px;
+            box-shadow: 0 0 10px white;
+            transition: left 0.1s ease-out;
+        }
+
+        .spectrum-labels {
+            display: flex;
+            justify-content: space-between;
+            font-size: 12px;
+            color: #888;
+        }
+
+        /* Controls Panel - Bottom Center */
+        #controls {
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            align-items: center;
+            gap: 40px;
+            padding: 20px 40px;
+        }
+
+        /* Custom Button */
+        button {
+            background: var(--primary);
+            color: #000;
+            border: none;
+            padding: 12px 28px;
+            font-size: 16px;
+            font-weight: 800;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            box-shadow: 0 0 20px rgba(0, 255, 204, 0.3);
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 0 30px rgba(0, 255, 204, 0.5);
+            background: #00e6b8;
+        }
+        
+        button:active {
+            transform: translateY(1px);
+        }
+
+        /* Toggle Switch */
+        .toggle-container {
             display: flex;
             flex-direction: column;
             align-items: center;
-            overflow: hidden;
+            gap: 10px;
         }
-        #controls {
-            padding: 20px;
-            background: rgba(255, 255, 255, 0.05);
-            width: 100%;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            gap: 40px;
-            border-bottom: 1px solid #222;
-            z-index: 10;
+
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 50px;
+            height: 26px;
         }
+
+        .switch input { opacity: 0; width: 0; height: 0; }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-color: #333;
+            transition: .4s;
+            border-radius: 34px;
+            border: 1px solid var(--panel-border);
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 18px;
+            width: 18px;
+            left: 4px;
+            bottom: 3px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+
+        input:checked + .slider {
+            background-color: var(--primary);
+            box-shadow: 0 0 15px rgba(0,255,204,0.4);
+        }
+
+        input:checked + .slider:before {
+            transform: translateX(24px);
+            background-color: #000;
+        }
+
+        .toggle-label {
+            font-size: 13px;
+            color: #aaa;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        /* Custom Range Slider */
         .slider-group {
             display: flex;
             flex-direction: column;
             align-items: center;
+            width: 300px;
         }
-        #dropBtn {
-            padding: 12px 24px;
-            background: #00ffcc;
-            border: none;
-            color: black;
-            font-weight: bold;
-            font-size: 16px;
-            border-radius: 6px;
+
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            background: transparent;
+            margin: 15px 0;
+        }
+
+        input[type=range]:focus {
+            outline: none;
+        }
+
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 6px;
             cursor: pointer;
-            transition: background 0.2s;
-            box-shadow: 0 0 15px rgba(0, 255, 204, 0.4);
+            background: #2a2c35;
+            border-radius: 3px;
+            border: 1px solid #111;
         }
-        #dropBtn:hover:not(:disabled) {
-            background: #00ccaa;
+
+        input[type=range]::-webkit-slider-thumb {
+            height: 20px;
+            width: 20px;
+            border-radius: 50%;
+            background: #fff;
+            cursor: pointer;
+            -webkit-appearance: none;
+            margin-top: -8px;
+            box-shadow: 0 0 10px rgba(255,255,255,0.5);
+            transition: transform 0.1s;
         }
-        #dropBtn:disabled {
-            background: #333;
-            color: #666;
-            cursor: not-allowed;
-            box-shadow: none;
+
+        input[type=range]::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
         }
-        canvas {
-            display: block;
+
+        #evDisplay {
+            font-size: 24px;
+            font-weight: 800;
+            color: white;
+            text-shadow: 0 0 10px rgba(255,255,255,0.3);
         }
-        .label-text {
-            font-size: 14px;
-            margin-bottom: 5px;
-            color: #aaa;
-        }
-        #dictionary {
-            position: absolute;
-            top: 120px;
-            left: 20px;
-            background: rgba(15, 15, 20, 0.9);
-            padding: 20px;
-            border-radius: 8px;
-            border: 1px solid #444;
-            max-width: 340px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.8);
-            backdrop-filter: blur(5px);
-            z-index: 5;
-        }
-        #dictionary h3 {
-            margin-top: 0;
-            color: #00ffcc;
-            border-bottom: 1px solid #444;
-            padding-bottom: 10px;
-        }
-        #dictionary ul {
-            padding-left: 20px;
-            margin-bottom: 20px;
-        }
-        #dictionary li {
-            margin-bottom: 10px;
-            line-height: 1.5;
-        }
-        .highlight { color: #fff; font-weight: bold; }
-        .red-text { color: #ff5555; font-weight: bold; }
-        .green-text { color: #55ff55; font-weight: bold; }
-        .blue-text { color: #7777ff; font-weight: bold; }
     </style>
 </head>
 <body>
 
-<div id="controls">
-    <div style="display: flex; flex-direction: column; gap: 10px; align-items: center;">
-        <button id="dropBtn">Drop Electron</button>
-        <label style="cursor: pointer; font-size: 14px;">
-            <input type="checkbox" id="continuousMode"> Continuous
-        </label>
+    <div class="glass-panel" id="dictionary">
+        <h3>How it Works</h3>
+        <ul>
+            <li><span class="highlight" style="color: #00ffcc;">Electrons (Cyan):</span> Flowing electrical current.</li>
+            <li><span class="highlight">Conduction Band:</span> The high-energy "highway" where current enters.</li>
+            <li><span class="highlight">Valence Band:</span> The lower-energy resting state.</li>
+            <li><span class="highlight" style="color: #ff4444;">Forbidden Zone:</span> Electrons must jump the gap entirely.</li>
+            <li><span class="highlight">Photons (Waves):</span> The energy lost in the fall is emitted as light!</li>
+        </ul>
+        <p style="border-top: 1px solid rgba(255,255,255,0.1); padding-top: 15px; margin-top: 15px;">
+            <strong>Change the Band Gap Slider</strong> to alter the drop height. High energy drops create Blue light, low energy creates Red.
+        </p>
     </div>
 
-    <div class="slider-group">
-        <div class="label-text">Band Gap Energy (Height of the fall)</div>
-        <input type="range" id="gapHeight" min="1.8" max="3.1" step="0.05" value="2.0" style="width:250px">
-        <div id="evDisplay" style="font-size: 18px; font-weight: bold; margin-top: 5px;">2.00 eV</div>
+    <div class="glass-panel" id="spectrum-panel">
+        <h3>Photon Energy (Color)</h3>
+        <div class="spectrum-bar">
+            <div id="spectrum-marker" style="left: 15.38%;"></div>
+        </div>
+        <div class="spectrum-labels">
+            <span>Low (1.8 eV)</span>
+            <span>High (3.1 eV)</span>
+        </div>
     </div>
-</div>
 
-<div id="dictionary">
-    <h3>The Apartment Analogy</h3>
-    <ul>
-        <li><span class="highlight">The Ball:</span> An <strong>Electron (-)</strong>.</li>
-        <li><span class="highlight">The Ledge:</span> The <strong>Conduction Band</strong> (The Upper Highway). Electrons here are free to carry current.</li>
-        <li><span class="highlight">The Floor:</span> The <strong>Valence Band</strong> (The Lower Garage). Notice the empty "Holes" (+) waiting for an electron to park.</li>
-        <li><span class="highlight">The Drop:</span> The <strong>Band Gap</strong>. Electrons cannot float in the air; they must jump all the way down.</li>
-        <li><span class="highlight">The Sparks:</span> <strong>Photons (Light)</strong>. The energy from the fall is thrown out as a flash of light.</li>
-    </ul>
-    
-    <h3 style="margin-top: 25px;">Why the Color Changes</h3>
-    <p>The height of the drop dictates the energy of the photon emitted:</p>
-    <div><span class="red-text">Short Drop:</span> Low Energy = Red Light</div>
-    <div style="margin: 8px 0;"><span class="green-text">Medium Drop:</span> Medium Energy = Green Light</div>
-    <div><span class="blue-text">High Drop:</span> High Energy = Blue Light</div>
-</div>
+    <div class="glass-panel" id="controls">
+        <button id="dropBtn">Fire Electron</button>
 
-<canvas id="ledCanvas"></canvas>
+        <div class="toggle-container">
+            <label class="switch">
+                <input type="checkbox" id="continuousMode">
+                <span class="slider"></span>
+            </label>
+            <span class="toggle-label">Continuous Stream</span>
+        </div>
+
+        <div class="slider-group">
+            <div class="toggle-label">Band Gap (Drop Height)</div>
+            <input type="range" id="gapHeight" min="1.8" max="3.1" step="0.05" value="2.0">
+            <div id="evDisplay">2.00 eV</div>
+        </div>
+    </div>
+
+    <canvas id="ledCanvas"></canvas>
 
 <script>
     const canvas = document.getElementById('ledCanvas');
     const ctx = canvas.getContext('2d');
+    
+    // UI Elements
     const gapSlider = document.getElementById('gapHeight');
     const evDisplay = document.getElementById('evDisplay');
     const dropBtn = document.getElementById('dropBtn');
     const continuousMode = document.getElementById('continuousMode');
+    const spectrumMarker = document.getElementById('spectrum-marker');
 
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
+    // Canvas Sizing
+    function resizeCanvas() {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+    }
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas();
 
-    let ball = { x: canvas.width / 2 + 100, y: 0, dy: 0, radius: 14, falling: false, landed: false };
+    // Physics Constants
+    const gravity = 0.6;
+    const floorY = canvas.height - 180;
+    const dropZoneX = canvas.width / 2;
+    const electronSpeed = 6;
+
+    // Simulation State
+    let electrons = [];
     let photons = [];
-    
-    const gravity = 0.5;
-    const floorY = canvas.height - 120;
-    let animationTime = 0;
+    let particles = []; // Sparkles when hitting the ground
+    let frameCount = 0;
 
-    function triggerDrop() {
-        if (!ball.falling && !ball.landed) {
-            ball.falling = true;
-            ball.landed = false;
-            dropBtn.disabled = true; 
-        }
+    // Color Calculator
+    function getRatio(ev) {
+        return (ev - 1.8) / (3.1 - 1.8);
     }
 
-    dropBtn.addEventListener('click', triggerDrop);
-
-    continuousMode.addEventListener('change', () => {
-        if (continuousMode.checked) triggerDrop();
-    });
-
     function getLEDColor(ev) {
-        const ratio = (ev - 1.8) / (3.1 - 1.8);
-        const hue = ratio * 240; 
+        const hue = getRatio(ev) * 240; 
         return `hsl(${hue}, 100%, 60%)`;
     }
 
-    function drawArrow(fromX, fromY, toX, toY) {
-        const headlen = 10; 
-        const angle = Math.atan2(toY - fromY, toX - fromX);
-        ctx.beginPath();
-        ctx.moveTo(fromX, fromY);
-        ctx.lineTo(toX, toY);
-        ctx.lineTo(toX - headlen * Math.cos(angle - Math.PI / 6), toY - headlen * Math.sin(angle - Math.PI / 6));
-        ctx.moveTo(toX, toY);
-        ctx.lineTo(toX - headlen * Math.cos(angle + Math.PI / 6), toY - headlen * Math.sin(angle + Math.PI / 6));
-        ctx.stroke();
-    }
+    // UI Updates
+    gapSlider.addEventListener('input', function() {
+        const ev = parseFloat(this.value);
+        evDisplay.innerText = `${ev.toFixed(2)} eV`;
+        evDisplay.style.color = getLEDColor(ev);
+        spectrumMarker.style.left = `${getRatio(ev) * 100}%`;
+    });
+    // Trigger initial color set
+    gapSlider.dispatchEvent(new Event('input'));
 
-    function drawSpectrumGraph(ev) {
-        const width = 320;
-        const height = 90;
-        const x = canvas.width - width - 20; // 20px from right edge
-        const y = 120; // 120px from top
-
-        // Panel Background
-        ctx.fillStyle = "rgba(15, 15, 20, 0.9)";
-        ctx.strokeStyle = "#444";
-        ctx.lineWidth = 1;
-        
-        ctx.beginPath();
-        ctx.roundRect ? ctx.roundRect(x, y, width, height, 8) : ctx.rect(x, y, width, height);
-        ctx.fill();
-        ctx.stroke();
-
-        // Title
-        ctx.fillStyle = "white";
-        ctx.font = "bold 14px sans-serif";
-        ctx.textAlign = "center";
-        ctx.fillText("Photon Energy Graph (Visible Spectrum)", x + width / 2, y + 25);
-
-        // Draw Spectrum Gradient Bar
-        const barX = x + 20;
-        const barY = y + 40;
-        const barW = width - 40;
-        const barH = 20;
-
-        let gradient = ctx.createLinearGradient(barX, 0, barX + barW, 0);
-        gradient.addColorStop(0, "hsl(0, 100%, 50%)");     // Red (1.8 eV)
-        gradient.addColorStop(0.25, "hsl(60, 100%, 50%)"); // Yellow
-        gradient.addColorStop(0.5, "hsl(120, 100%, 50%)");// Green
-        gradient.addColorStop(0.75, "hsl(180, 100%, 50%)");// Cyan
-        gradient.addColorStop(1, "hsl(240, 100%, 50%)");   // Blue (3.1 eV)
-
-        ctx.fillStyle = gradient;
-        ctx.fillRect(barX, barY, barW, barH);
-        
-        // Outline for the bar
-        ctx.strokeStyle = "#fff";
-        ctx.lineWidth = 1;
-        ctx.strokeRect(barX, barY, barW, barH);
-
-        // Labels
-        ctx.fillStyle = "#aaa";
-        ctx.font = "12px sans-serif";
-        ctx.textAlign = "left";
-        ctx.fillText("Low (1.8 eV)", barX, barY + 35);
-        ctx.textAlign = "right";
-        ctx.fillText("High (3.1 eV)", barX + barW, barY + 35);
-
-        // The Sliding Indicator Marker
-        const ratio = (ev - 1.8) / (3.1 - 1.8);
-        const markerX = barX + (ratio * barW);
-        
-        // Marker Line
-        ctx.strokeStyle = "white";
-        ctx.lineWidth = 3;
-        ctx.beginPath();
-        ctx.moveTo(markerX, barY - 10);
-        ctx.lineTo(markerX, barY + barH + 5);
-        ctx.stroke();
-
-        // Marker Triangle (Top)
-        ctx.fillStyle = "white";
-        ctx.beginPath();
-        ctx.moveTo(markerX - 6, barY - 10);
-        ctx.lineTo(markerX + 6, barY - 10);
-        ctx.lineTo(markerX, barY);
-        ctx.fill();
-        
-        // Live eV readout above the marker
-        ctx.fillStyle = "white";
-        ctx.font = "bold 13px sans-serif";
-        ctx.textAlign = "center";
-        
-        // Keep text inside the box boundaries
-        let textX = markerX;
-        if (textX < barX + 20) textX = barX + 20;
-        if (textX > barX + barW - 20) textX = barX + barW - 20;
-        
-        ctx.fillText(`${ev.toFixed(2)} eV`, textX, barY - 15);
-    }
-
-    function drawScene() {
-        animationTime += 1;
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-
+    // Spawn an electron into the flow
+    function spawnElectron() {
         const ev = parseFloat(gapSlider.value);
-        const gapPx = ev * 150; 
+        const ledgeY = floorY - (ev * 160); // Calculate current height
+
+        electrons.push({
+            x: -20, // Start off-screen left
+            y: ledgeY - 10,
+            vy: 0,
+            state: 'conduction', // 'conduction' -> 'falling' -> 'valence'
+            trail: []
+        });
+    }
+
+    // Manual Drop
+    dropBtn.addEventListener('click', () => {
+        spawnElectron();
+        if(!continuousMode.checked) {
+            dropBtn.disabled = true;
+            setTimeout(() => dropBtn.disabled = false, 500);
+        }
+    });
+
+    // Particle Explosion Generator
+    function createSparks(x, y, color) {
+        for(let i=0; i<8; i++) {
+            particles.push({
+                x: x, y: y,
+                vx: (Math.random() - 0.5) * 6,
+                vy: (Math.random() * -5) - 2,
+                life: 1.0,
+                color: color
+            });
+        }
+    }
+
+    // Main Render Loop
+    function drawScene() {
+        frameCount++;
+        const ev = parseFloat(gapSlider.value);
+        const gapPx = ev * 160; 
         const ledgeY = floorY - gapPx;
         const color = getLEDColor(ev);
-        const centerX = canvas.width / 2 + 50; 
 
-        // 1. Draw Spectrum Graph Panel
-        drawSpectrumGraph(ev);
+        // 1. Clear with subtle trailing effect for smoothness
+        ctx.fillStyle = "rgba(10, 11, 16, 0.6)";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-        // 2. Draw Band Gap Measurement & Forbidden Zone
-        ctx.fillStyle = "rgba(255, 50, 50, 0.05)";
-        ctx.fillRect(0, ledgeY + 15, canvas.width, floorY - ledgeY - 30);
-        
-        ctx.fillStyle = "rgba(255, 50, 50, 0.3)";
-        ctx.font = "italic 20px sans-serif";
-        ctx.textAlign = "center";
-        ctx.fillText("FORBIDDEN ZONE (No Electrons Allowed)", centerX, ledgeY + (gapPx / 2) + 5);
+        // Grid Background (Blueprint feel)
+        ctx.strokeStyle = "rgba(255,255,255,0.03)";
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        for(let x=0; x<canvas.width; x+=50) { ctx.moveTo(x, 0); ctx.lineTo(x, canvas.height); }
+        for(let y=0; y<canvas.height; y+=50) { ctx.moveTo(0, y); ctx.lineTo(canvas.width, y); }
+        ctx.stroke();
 
-        ctx.strokeStyle = color;
+        // 2. Draw Environments
+        // Conduction Band (Top)
+        ctx.fillStyle = 'rgba(0, 255, 204, 0.05)';
+        ctx.fillRect(0, ledgeY - 30, dropZoneX, 30);
+        ctx.strokeStyle = 'rgba(0, 255, 204, 0.3)';
         ctx.lineWidth = 2;
-        drawArrow(centerX - 200, ledgeY + 15, centerX - 200, floorY - 15);
-        drawArrow(centerX - 200, floorY - 15, centerX - 200, ledgeY + 15);
-        ctx.fillStyle = color;
-        ctx.font = "bold 16px sans-serif";
-        ctx.textAlign = "right";
-        ctx.fillText(`Band Gap: ${ev.toFixed(2)} eV`, centerX - 215, ledgeY + (gapPx / 2) + 5);
-
-        // 3. Draw Conduction Band (Free flowing current)
-        ctx.fillStyle = '#2a2a35';
-        ctx.fillRect(centerX - 150, ledgeY - 10, 300, 25);
-        ctx.fillStyle = '#aaa';
-        ctx.textAlign = "center";
-        ctx.fillText("CONDUCTION BAND (The Upper Highway)", centerX, ledgeY - 25);
+        ctx.beginPath(); ctx.moveTo(0, ledgeY); ctx.lineTo(dropZoneX, ledgeY); ctx.stroke();
         
-        // Flowing electrons in conduction band
-        ctx.fillStyle = "#00ffff";
-        for (let i = 0; i < 5; i++) {
-            let movingX = (centerX - 150) + ((animationTime * 2 + i * 60) % 300);
-            ctx.beginPath();
-            ctx.arc(movingX, ledgeY + 2, 4, 0, Math.PI * 2);
-            ctx.fill();
+        ctx.fillStyle = '#00ffcc';
+        ctx.font = "bold 14px Inter";
+        ctx.textAlign = "left";
+        ctx.globalAlpha = 0.5;
+        ctx.fillText("CONDUCTION BAND (HIGH ENERGY)", 20, ledgeY - 40);
+        ctx.globalAlpha = 1.0;
+
+        // Valence Band (Bottom)
+        ctx.fillStyle = color;
+        ctx.globalAlpha = 0.05;
+        ctx.fillRect(dropZoneX, floorY, canvas.width - dropZoneX, 30);
+        ctx.globalAlpha = 1.0;
+        ctx.strokeStyle = color;
+        ctx.beginPath(); ctx.moveTo(dropZoneX, floorY); ctx.lineTo(canvas.width, floorY); ctx.stroke();
+
+        ctx.fillStyle = color;
+        ctx.textAlign = "right";
+        ctx.globalAlpha = 0.5;
+        ctx.fillText("VALENCE BAND (LOW ENERGY)", canvas.width - 20, floorY + 50);
+        ctx.globalAlpha = 1.0;
+
+        // Drop Zone Indicator
+        ctx.strokeStyle = "rgba(255, 255, 255, 0.1)";
+        ctx.setLineDash([5, 10]);
+        ctx.beginPath();
+        ctx.moveTo(dropZoneX, ledgeY);
+        ctx.lineTo(dropZoneX, floorY);
+        ctx.stroke();
+        ctx.setLineDash([]);
+
+        // Continuous Spawning Logic
+        if (continuousMode.checked && frameCount % 15 === 0) {
+            spawnElectron();
         }
 
-        // 4. Draw Valence Band (Stable resting state with "Holes")
-        ctx.fillStyle = '#111';
-        ctx.fillRect(0, floorY, canvas.width, canvas.height - floorY);
-        ctx.fillStyle = color;
-        ctx.globalAlpha = 0.2;
-        ctx.fillRect(0, floorY, canvas.width, 3);
-        ctx.globalAlpha = 1.0;
-        ctx.fillStyle = '#aaa';
-        ctx.textAlign = "center";
-        ctx.fillText("VALENCE BAND (The Lower Garage)", centerX, floorY + 60);
+        // 3. Update & Draw Electrons
+        for (let i = electrons.length - 1; i >= 0; i--) {
+            let e = electrons[i];
 
-        // Draw "Holes" (+) in the valence band
-        ctx.strokeStyle = "#ff4444";
-        ctx.lineWidth = 2;
-        for(let i = -3; i <= 3; i++) {
-            let hx = centerX + i * 50;
-            let hy = floorY + 15;
-            
-            // If the main electron landed here, don't draw the hole (it's filled!)
-            if (ball.landed && i === 0) continue; 
+            // Store trail
+            e.trail.push({x: e.x, y: e.y});
+            if (e.trail.length > 10) e.trail.shift();
 
+            // State Machine
+            if (e.state === 'conduction') {
+                e.x += electronSpeed;
+                e.y = ledgeY - 10; // Lock to ledge in case user slides it
+                if (e.x >= dropZoneX + (Math.random()*10 - 5)) { // Slight randomness to drop
+                    e.state = 'falling';
+                    e.x = dropZoneX;
+                }
+            } 
+            else if (e.state === 'falling') {
+                e.vy += gravity;
+                e.y += e.vy;
+
+                // Hit the ground
+                if (e.y >= floorY - 10) {
+                    e.y = floorY - 10;
+                    e.state = 'valence';
+                    e.vy = 0;
+                    
+                    // Trigger Photon!
+                    photons.push({
+                        x: e.x,
+                        y: e.y,
+                        angle: Math.PI * 1.5 + (Math.random() * 1.0 - 0.5), // Shoot upwards
+                        speed: 4 + Math.random() * 3,
+                        life: 1.0,
+                        color: color
+                    });
+                    createSparks(e.x, e.y + 10, color);
+                }
+            }
+            else if (e.state === 'valence') {
+                e.x += electronSpeed;
+                if (e.x > canvas.width + 50) electrons.splice(i, 1);
+            }
+
+            // Draw Trail
+            if (e.trail.length > 1) {
+                ctx.beginPath();
+                ctx.moveTo(e.trail[0].x, e.trail[0].y);
+                for(let t=1; t<e.trail.length; t++) {
+                    ctx.lineTo(e.trail[t].x, e.trail[t].y);
+                }
+                ctx.strokeStyle = "rgba(0, 255, 204, 0.4)";
+                ctx.lineWidth = 6;
+                ctx.lineCap = "round";
+                ctx.stroke();
+            }
+
+            // Draw Electron
             ctx.beginPath();
-            ctx.arc(hx, hy, 12, 0, Math.PI * 2);
-            ctx.stroke();
-            ctx.fillStyle = "#ff4444";
-            ctx.font = "14px monospace";
+            ctx.arc(e.x, e.y, 8, 0, Math.PI * 2);
+            ctx.fillStyle = "#fff";
+            ctx.shadowBlur = 15;
+            ctx.shadowColor = "#00ffcc";
+            ctx.fill();
+            ctx.shadowBlur = 0; // Reset
+            
+            // Minus sign
+            ctx.fillStyle = "#000";
+            ctx.font = "bold 12px Inter";
             ctx.textAlign = "center";
             ctx.textBaseline = "middle";
-            ctx.fillText("+", hx, hy + 1);
+            ctx.fillText("-", e.x, e.y + 1);
         }
 
-        // 5. Update & Draw Ball (Electron)
-        if (!ball.falling && !ball.landed) {
-            ball.y = ledgeY - ball.radius;
-            ball.x = centerX;
-        } else if (ball.falling) {
-            ball.dy += gravity;
-            ball.y += ball.dy;
+        // 4. Update & Draw Particles (Sparks)
+        for (let i = particles.length - 1; i >= 0; i--) {
+            let p = particles[i];
+            p.x += p.vx;
+            p.y += p.vy;
+            p.vy += gravity * 0.5;
+            p.life -= 0.05;
 
-            // Target the center hole in the valence band
-            if (ball.y + ball.radius >= floorY + 15) {
-                ball.y = floorY + 15;
-                ball.landed = true;
-                ball.falling = false;
-                
-                // Emit ONE Photon (Wave) shooting generally upward
-                photons.push({
-                    x: ball.x,
-                    y: ball.y - 15,
-                    angle: Math.PI * 1.5 + (Math.random() * 0.4 - 0.2),
-                    speed: 4,
-                    phase: Math.random() * Math.PI * 2,
-                    opacity: 1,
-                    color: color,
-                    life: 0
-                });
-                
-                // Reset timer (shortened to 1 second for better continuous flow)
-                setTimeout(() => {
-                    ball.landed = false;
-                    ball.dy = 0;
-                    if (continuousMode.checked) {
-                        triggerDrop();
-                    } else {
-                        dropBtn.disabled = false;
-                    }
-                }, 1000); 
-            }
+            ctx.fillStyle = p.color;
+            ctx.globalAlpha = Math.max(0, p.life);
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, 2, 0, Math.PI*2);
+            ctx.fill();
+            
+            if (p.life <= 0) particles.splice(i, 1);
         }
+        ctx.globalAlpha = 1.0;
 
-        // Draw the main Electron
-        ctx.beginPath();
-        ctx.arc(ball.x, ball.y, ball.radius, 0, Math.PI * 2);
-        ctx.fillStyle = "#00ffff"; // Electron Blue/Cyan
-        ctx.shadowBlur = 15;
-        ctx.shadowColor = "#00ffff";
-        ctx.fill();
-        ctx.shadowBlur = 0;
-        
-        // Draw the Negative charge (-) inside the electron
-        ctx.fillStyle = "black";
-        ctx.font = "bold 20px monospace";
-        ctx.textAlign = "center";
-        ctx.textBaseline = "middle";
-        ctx.fillText("-", ball.x, ball.y + 2);
-        
-        ctx.fillStyle = "white";
-        ctx.font = "14px sans-serif";
-        ctx.textAlign = "left";
-        ctx.fillText("← Electron", ball.x + 25, ball.y);
-
-        // 6. Draw Photons (Squiggly Light Waves)
+        // 5. Update & Draw Photons (Light Waves)
         for (let i = photons.length - 1; i >= 0; i--) {
             let p = photons[i];
             p.x += Math.cos(p.angle) * p.speed;
             p.y += Math.sin(p.angle) * p.speed;
-            p.life += 0.2;
-            p.opacity -= 0.015;
+            p.life -= 0.01; // Fade out
 
             ctx.beginPath();
-            let waveAmplitude = 6;
-            let waveFrequency = 0.5;
+            let waveAmplitude = 8;
+            let waveFrequency = 0.4;
             
-            // Draw a sine wave path for the photon
-            for(let w = 0; w < 30; w++) {
+            // Draw sine wave path
+            for(let w = 0; w < 40; w++) {
                 let wx = p.x - Math.cos(p.angle) * w; 
                 let wy = p.y - Math.sin(p.angle) * w;
                 
-                // Add perpendicular sine wave offset
                 let perpAngle = p.angle + Math.PI / 2;
-                let offset = Math.sin(w * waveFrequency - p.life) * waveAmplitude;
+                let offset = Math.sin(w * waveFrequency - (frameCount*0.2)) * waveAmplitude;
                 
                 wx += Math.cos(perpAngle) * offset;
                 wy += Math.sin(perpAngle) * offset;
@@ -431,35 +574,27 @@
             
             ctx.strokeStyle = p.color;
             ctx.lineWidth = 3;
-            ctx.globalAlpha = p.opacity;
-            ctx.shadowBlur = 10;
+            ctx.globalAlpha = Math.max(0, p.life);
+            ctx.shadowBlur = 15;
             ctx.shadowColor = p.color;
             ctx.stroke();
-            
-            if (p.opacity > 0.8) {
+            ctx.shadowBlur = 0;
+
+            // Optional "Photon" label on a few of them so it's not overwhelming
+            if (p.life > 0.8 && i % 4 === 0) {
                  ctx.fillStyle = "white";
-                 ctx.font = "12px sans-serif";
-                 ctx.globalAlpha = p.opacity;
-                 ctx.fillText("Photon", p.x + 10, p.y - 10);
+                 ctx.font = "600 11px Inter";
+                 ctx.fillText("~ Photon", p.x + 15, p.y);
             }
             
-            if (p.opacity <= 0) photons.splice(i, 1);
+            if (p.life <= 0) photons.splice(i, 1);
         }
         ctx.globalAlpha = 1.0;
-        ctx.shadowBlur = 0;
 
         requestAnimationFrame(drawScene);
     }
 
-    gapSlider.oninput = function() {
-        evDisplay.innerText = `${parseFloat(this.value).toFixed(2)} eV`;
-    };
-
-    window.onresize = function() {
-        canvas.width = window.innerWidth;
-        canvas.height = window.innerHeight;
-    };
-
+    // Start Simulation
     drawScene();
 </script>
 
