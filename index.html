@@ -38,38 +38,46 @@
             -webkit-backdrop-filter: blur(12px);
             border: 1px solid var(--panel-border);
             border-radius: 16px;
-            padding: 24px;
+            padding: 16px; /* Reduced from 24px */
             z-index: 10;
             box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+
+        .draggable {
+            cursor: grab;
+        }
+
+        .draggable:active {
+            cursor: grabbing;
         }
 
         /* Dictionary Panel - Top Left */
         #dictionary {
             top: 20px;
             left: 20px;
-            width: 320px;
+            width: 260px; /* Reduced from 320px */
         }
 
         #dictionary h3 {
-            margin: 0 0 15px 0;
+            margin: 0 0 10px 0;
             color: var(--primary);
-            font-size: 16px;
+            font-size: 14px; /* Reduced from 16px */
             text-transform: uppercase;
             letter-spacing: 1px;
             border-bottom: 1px solid var(--panel-border);
-            padding-bottom: 10px;
+            padding-bottom: 8px;
         }
 
         #dictionary p, #dictionary li {
-            font-size: 14px;
-            line-height: 1.6;
+            font-size: 12px; /* Reduced from 14px */
+            line-height: 1.5;
             color: #ccc;
-            margin-bottom: 8px;
+            margin-bottom: 6px;
         }
 
         #dictionary ul {
             padding-left: 20px;
-            margin: 0 0 20px 0;
+            margin: 0 0 15px 0;
         }
 
         .highlight { color: #fff; font-weight: 600; }
@@ -78,11 +86,21 @@
         #spectrum-panel {
             top: 20px;
             right: 20px;
-            width: 320px;
+            width: 260px; /* Reduced from 320px */
+        }
+
+        #spectrum-panel h3 {
+            margin: 0 0 10px 0;
+            color: var(--primary);
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            border-bottom: 1px solid var(--panel-border);
+            padding-bottom: 8px;
         }
 
         .spectrum-bar {
-            height: 16px;
+            height: 14px;
             background: linear-gradient(to right, 
                 hsl(0, 100%, 50%), 
                 hsl(60, 100%, 50%), 
@@ -92,16 +110,16 @@
             );
             border-radius: 8px;
             position: relative;
-            margin: 20px 0 10px 0;
+            margin: 15px 0 8px 0;
             border: 1px solid rgba(255,255,255,0.3);
         }
 
         #spectrum-marker {
             position: absolute;
             width: 4px;
-            height: 28px;
+            height: 24px;
             background: white;
-            top: -6px;
+            top: -5px;
             border-radius: 2px;
             box-shadow: 0 0 10px white;
             transition: left 0.1s ease-out;
@@ -110,7 +128,7 @@
         .spectrum-labels {
             display: flex;
             justify-content: space-between;
-            font-size: 12px;
+            font-size: 11px;
             color: #888;
         }
 
@@ -261,7 +279,7 @@
 </head>
 <body>
 
-    <div class="glass-panel" id="dictionary">
+    <div class="glass-panel draggable" id="dictionary">
         <h3>How it Works</h3>
         <ul>
             <li><span class="highlight" style="color: #00ffcc;">Electrons (Cyan):</span> Flowing electrical current.</li>
@@ -271,12 +289,12 @@
             <li><span class="highlight" style="color: #ff4444;">Forbidden Zone:</span> Electrons must jump the gap entirely.</li>
             <li><span class="highlight">Photons (Waves):</span> The energy lost in the fall is emitted as light!</li>
         </ul>
-        <p style="border-top: 1px solid rgba(255,255,255,0.1); padding-top: 15px; margin-top: 15px;">
+        <p style="border-top: 1px solid rgba(255,255,255,0.1); padding-top: 10px; margin-top: 10px;">
             <strong>Change the Band Gap Slider</strong> to alter the drop height. High energy drops create Blue light, low energy creates Red.
         </p>
     </div>
 
-    <div class="glass-panel" id="spectrum-panel">
+    <div class="glass-panel draggable" id="spectrum-panel">
         <h3>Photon Energy (Color)</h3>
         <div class="spectrum-bar">
             <div id="spectrum-marker" style="left: 15.38%;"></div>
@@ -323,6 +341,36 @@
     const continuousMode = document.getElementById('continuousMode');
     const flowRateSlider = document.getElementById('flowRate');
     const spectrumMarker = document.getElementById('spectrum-marker');
+
+    // Drag Logic for Panels
+    const draggables = document.querySelectorAll('.draggable');
+    let activePanel = null;
+    let offsetX = 0;
+    let offsetY = 0;
+
+    draggables.forEach(panel => {
+        panel.addEventListener('mousedown', (e) => {
+            activePanel = panel;
+            const rect = panel.getBoundingClientRect();
+            offsetX = e.clientX - rect.left;
+            offsetY = e.clientY - rect.top;
+            panel.style.zIndex = 100;
+        });
+    });
+
+    document.addEventListener('mousemove', (e) => {
+        if (!activePanel) return;
+        activePanel.style.left = (e.clientX - offsetX) + 'px';
+        activePanel.style.top = (e.clientY - offsetY) + 'px';
+        activePanel.style.right = 'auto'; // Clear right property so left works
+    });
+
+    document.addEventListener('mouseup', () => {
+        if (activePanel) {
+            activePanel.style.zIndex = 10;
+            activePanel = null;
+        }
+    });
 
     // Canvas Sizing
     function resizeCanvas() {
