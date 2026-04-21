@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LED Band Gap Simulator - Visual Quantum Physics</title>
+    <title>LED Band Gap Simulator - Closed Loop</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -30,7 +30,6 @@
             z-index: 1;
         }
 
-        /* Glassmorphism Panels */
         .glass-panel {
             position: absolute;
             background: var(--panel-bg);
@@ -38,7 +37,7 @@
             -webkit-backdrop-filter: blur(12px);
             border: 1px solid var(--panel-border);
             border-radius: 16px;
-            padding: 16px; /* Reduced from 24px */
+            padding: 16px;
             z-index: 10;
             box-shadow: 0 10px 30px rgba(0,0,0,0.5);
         }
@@ -51,17 +50,16 @@
             cursor: grabbing;
         }
 
-        /* Dictionary Panel - Top Left */
         #dictionary {
             top: 20px;
             left: 20px;
-            width: 260px; /* Reduced from 320px */
+            width: 260px;
         }
 
         #dictionary h3 {
             margin: 0 0 10px 0;
             color: var(--primary);
-            font-size: 14px; /* Reduced from 16px */
+            font-size: 14px;
             text-transform: uppercase;
             letter-spacing: 1px;
             border-bottom: 1px solid var(--panel-border);
@@ -69,7 +67,7 @@
         }
 
         #dictionary p, #dictionary li {
-            font-size: 12px; /* Reduced from 14px */
+            font-size: 12px;
             line-height: 1.5;
             color: #ccc;
             margin-bottom: 6px;
@@ -82,11 +80,10 @@
 
         .highlight { color: #fff; font-weight: 600; }
 
-        /* Spectrum Graph Panel - Top Right */
         #spectrum-panel {
             top: 20px;
             right: 20px;
-            width: 260px; /* Reduced from 320px */
+            width: 260px;
         }
 
         #spectrum-panel h3 {
@@ -132,7 +129,6 @@
             color: #888;
         }
 
-        /* Controls Panel - Bottom Center */
         #controls {
             bottom: 30px;
             left: 50%;
@@ -143,7 +139,6 @@
             padding: 20px 40px;
         }
 
-        /* Custom Button */
         button {
             background: var(--primary);
             color: #000;
@@ -167,7 +162,6 @@
             transform: translateY(1px);
         }
 
-        /* Toggle Switch */
         .toggle-container {
             display: flex;
             flex-direction: column;
@@ -224,7 +218,6 @@
             margin-bottom: 5px;
         }
 
-        /* Custom Range Slider */
         .slider-group {
             display: flex;
             flex-direction: column;
@@ -282,16 +275,12 @@
     <div class="glass-panel draggable" id="dictionary">
         <h3>How it Works</h3>
         <ul>
-            <li><span class="highlight" style="color: #00ffcc;">Electrons (Cyan):</span> Flowing electrical current.</li>
-            <li><span class="highlight" style="color: #ffaa00;">Battery Pump:</span> Lifts electrons up to the top highway to keep the circuit flowing.</li>
-            <li><span class="highlight">Conduction Band:</span> The high-energy "highway" where current enters.</li>
+            <li><span class="highlight" style="color: #00ffcc;">The Closed Loop:</span> Notice how the electrons travel along the bottom wire back to the pump. In a real circuit, they are endlessly recycled!</li>
+            <li><span class="highlight" style="color: #ffaa00;">Battery Pump:</span> Lifts returning electrons up to the top highway to keep the circuit flowing.</li>
+            <li><span class="highlight">Conduction Band:</span> The high-energy "highway".</li>
             <li><span class="highlight">Valence Band:</span> The lower-energy resting state.</li>
-            <li><span class="highlight" style="color: #ff4444;">Forbidden Zone:</span> Electrons must jump the gap entirely.</li>
             <li><span class="highlight">Photons (Waves):</span> The energy lost in the fall is emitted as light!</li>
         </ul>
-        <p style="border-top: 1px solid rgba(255,255,255,0.1); padding-top: 10px; margin-top: 10px;">
-            <strong>Change the Band Gap Slider</strong> to alter the drop height. High energy drops create Blue light, low energy creates Red.
-        </p>
     </div>
 
     <div class="glass-panel draggable" id="spectrum-panel">
@@ -306,11 +295,11 @@
     </div>
 
     <div class="glass-panel" id="controls">
-        <button id="dropBtn">Fire Electron</button>
+        <button id="dropBtn">Add Electron</button>
 
         <div class="toggle-container">
             <label class="switch">
-                <input type="checkbox" id="continuousMode">
+                <input type="checkbox" id="continuousMode" checked>
                 <span class="slider"></span>
             </label>
             <span class="toggle-label" style="margin-bottom: 0;">Continuous</span>
@@ -334,7 +323,6 @@
     const canvas = document.getElementById('ledCanvas');
     const ctx = canvas.getContext('2d');
     
-    // UI Elements
     const gapSlider = document.getElementById('gapHeight');
     const evDisplay = document.getElementById('evDisplay');
     const dropBtn = document.getElementById('dropBtn');
@@ -362,7 +350,7 @@
         if (!activePanel) return;
         activePanel.style.left = (e.clientX - offsetX) + 'px';
         activePanel.style.top = (e.clientY - offsetY) + 'px';
-        activePanel.style.right = 'auto'; // Clear right property so left works
+        activePanel.style.right = 'auto'; 
     });
 
     document.addEventListener('mouseup', () => {
@@ -372,72 +360,63 @@
         }
     });
 
-    // Canvas Sizing
+    // Dynamic Sizing Elements
+    let floorY, dropZoneX, pumpX, pumpWidth, returnRightX, returnBottomY;
+
     function resizeCanvas() {
         canvas.width = window.innerWidth;
         canvas.height = window.innerHeight;
+        // Adjust geometry based on screen size
+        floorY = canvas.height - 250; // Lifted up to make room for bottom wire
+        dropZoneX = canvas.width / 2;
+        pumpX = 80;
+        pumpWidth = 90;
+        returnRightX = canvas.width - 150;
+        returnBottomY = floorY + 130;
     }
     window.addEventListener('resize', resizeCanvas);
     resizeCanvas();
 
     // Physics Constants
     const gravity = 0.6;
-    const floorY = canvas.height - 180;
-    const dropZoneX = canvas.width / 2;
     const electronSpeed = 6;
-    const pumpX = 80;
-    const pumpWidth = 90;
+    const MAX_ELECTRONS = 150; // Prevent browser crash
 
-    // Simulation State
     let electrons = [];
     let photons = [];
-    let particles = []; // Sparkles when hitting the ground
+    let particles = [];
     let frameCount = 0;
 
-    // Color Calculator
-    function getRatio(ev) {
-        return (ev - 1.8) / (3.1 - 1.8);
-    }
-
+    function getRatio(ev) { return (ev - 1.8) / (3.1 - 1.8); }
     function getLEDColor(ev) {
         const hue = getRatio(ev) * 240; 
         return `hsl(${hue}, 100%, 60%)`;
     }
 
-    // UI Updates
     gapSlider.addEventListener('input', function() {
         const ev = parseFloat(this.value);
         evDisplay.innerText = `${ev.toFixed(2)} eV`;
         evDisplay.style.color = getLEDColor(ev);
         spectrumMarker.style.left = `${getRatio(ev) * 100}%`;
     });
-    // Trigger initial color set
     gapSlider.dispatchEvent(new Event('input'));
 
-    // Spawn an electron into the flow
     function spawnElectron() {
+        if (electrons.length >= MAX_ELECTRONS) return; // Circuit limit
         const ev = parseFloat(gapSlider.value);
-        const ledgeY = floorY - (ev * 160); // Calculate current height
+        const ledgeY = floorY - (ev * 160);
 
         electrons.push({
-            x: pumpX + (pumpWidth / 2), // Start directly inside the pump
-            y: floorY, // Start at the bottom
+            x: pumpX + (pumpWidth / 2),
+            y: floorY,
             vy: 0,
-            state: 'pumping', // 'pumping' -> 'conduction' -> 'falling' -> 'valence'
+            state: 'pumping', 
             trail: []
         });
     }
 
-    // Manual Drop
-    dropBtn.addEventListener('click', () => {
-        spawnElectron();
-        if(!continuousMode.checked) {
-            dropBtn.disabled = true;
-            setTimeout(() => dropBtn.disabled = false, 500);
-        }
-    });
+    dropBtn.addEventListener('click', spawnElectron);
 
-    // Particle Explosion Generator
     function createSparks(x, y, color) {
         for(let i=0; i<8; i++) {
             particles.push({
@@ -450,7 +429,6 @@
         }
     }
 
-    // Main Render Loop
     function drawScene() {
         frameCount++;
         const ev = parseFloat(gapSlider.value);
@@ -458,11 +436,11 @@
         const ledgeY = floorY - gapPx;
         const color = getLEDColor(ev);
 
-        // 1. Clear with subtle trailing effect for smoothness
+        // 1. Clear Screen
         ctx.fillStyle = "rgba(10, 11, 16, 0.6)";
         ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-        // Grid Background (Blueprint feel)
+        // Grid Background
         ctx.strokeStyle = "rgba(255,255,255,0.03)";
         ctx.lineWidth = 1;
         ctx.beginPath();
@@ -470,9 +448,26 @@
         for(let y=0; y<canvas.height; y+=50) { ctx.moveTo(0, y); ctx.lineTo(canvas.width, y); }
         ctx.stroke();
 
-        // 2. Draw Environments
+        // 2. Draw Return Circuit (Wire path)
+        ctx.strokeStyle = "rgba(0, 255, 204, 0.05)";
+        ctx.lineWidth = 24;
+        ctx.lineJoin = "round";
+        ctx.lineCap = "round";
+        ctx.beginPath();
+        ctx.moveTo(dropZoneX - 20, floorY);
+        ctx.lineTo(returnRightX, floorY);
+        ctx.lineTo(returnRightX, returnBottomY);
+        ctx.lineTo(pumpX + pumpWidth / 2, returnBottomY);
+        ctx.lineTo(pumpX + pumpWidth / 2, floorY);
+        ctx.stroke();
 
-        // Battery / Pump (Left Side)
+        ctx.strokeStyle = "rgba(255, 255, 255, 0.1)";
+        ctx.lineWidth = 2;
+        ctx.stroke();
+
+        // 3. Draw Environments
+
+        // Battery / Pump
         ctx.fillStyle = "rgba(255, 170, 0, 0.1)";
         ctx.fillRect(pumpX, ledgeY, pumpWidth, floorY - ledgeY);
         
@@ -480,7 +475,6 @@
         ctx.lineWidth = 3;
         ctx.strokeRect(pumpX, ledgeY, pumpWidth, floorY - ledgeY);
 
-        // Battery/Pump Text
         ctx.save();
         ctx.translate(pumpX + pumpWidth / 2, (floorY + ledgeY) / 2);
         ctx.rotate(-Math.PI / 2);
@@ -490,16 +484,6 @@
         ctx.textBaseline = "middle";
         ctx.fillText("BATTERY / PUMP", 0, 0);
         ctx.restore();
-
-        // Animated Upward Arrows inside the pump
-        ctx.fillStyle = "rgba(255, 170, 0, 0.4)";
-        ctx.font = "20px Inter";
-        ctx.textAlign = "center";
-        let arrowOffset = (frameCount * 2) % 40;
-        for(let y = floorY - arrowOffset; y > ledgeY; y -= 40) {
-            ctx.fillText("▲", pumpX + 20, y);
-            ctx.fillText("▲", pumpX + pumpWidth - 20, y);
-        }
 
         // Conduction Band (Top Highway)
         ctx.fillStyle = 'rgba(0, 255, 204, 0.05)';
@@ -512,21 +496,19 @@
         ctx.font = "bold 14px Inter";
         ctx.textAlign = "left";
         ctx.globalAlpha = 0.5;
-        ctx.fillText("CONDUCTION BAND (HIGH ENERGY)", pumpX + pumpWidth + 20, ledgeY - 40);
+        ctx.fillText("CONDUCTION BAND", pumpX + pumpWidth + 20, ledgeY - 40);
         ctx.globalAlpha = 1.0;
 
-        // Valence Band (Bottom Floor)
+        // Valence Band Area
         ctx.fillStyle = color;
         ctx.globalAlpha = 0.05;
-        ctx.fillRect(dropZoneX, floorY, canvas.width - dropZoneX, 30);
+        ctx.fillRect(dropZoneX, floorY - 30, returnRightX - dropZoneX, 30);
         ctx.globalAlpha = 1.0;
-        ctx.strokeStyle = color;
-        ctx.beginPath(); ctx.moveTo(dropZoneX, floorY); ctx.lineTo(canvas.width, floorY); ctx.stroke();
-
+        
         ctx.fillStyle = color;
-        ctx.textAlign = "right";
+        ctx.textAlign = "center";
         ctx.globalAlpha = 0.5;
-        ctx.fillText("VALENCE BAND (LOW ENERGY)", canvas.width - 20, floorY + 50);
+        ctx.fillText("VALENCE BAND", dropZoneX + (returnRightX - dropZoneX)/2, floorY - 40);
         ctx.globalAlpha = 1.0;
 
         // Drop Zone Indicator
@@ -538,23 +520,22 @@
         ctx.stroke();
         ctx.setLineDash([]);
 
-        // Continuous Spawning Logic tied to the slider
+        // Spawning
         const currentFlowDelay = 65 - parseInt(flowRateSlider.value); 
         if (continuousMode.checked && frameCount % currentFlowDelay === 0) {
             spawnElectron();
         }
 
-        // 3. Update & Draw Electrons
+        // 4. Update & Draw Electrons
         for (let i = electrons.length - 1; i >= 0; i--) {
             let e = electrons[i];
 
-            // Store trail
             e.trail.push({x: e.x, y: e.y});
             if (e.trail.length > 10) e.trail.shift();
 
-            // State Machine
+            // Circuit State Machine
             if (e.state === 'pumping') {
-                e.y -= electronSpeed; // Lift the electron up the pump
+                e.y -= electronSpeed;
                 if (e.y <= ledgeY - 10) {
                     e.y = ledgeY - 10;
                     e.state = 'conduction';
@@ -562,8 +543,8 @@
             }
             else if (e.state === 'conduction') {
                 e.x += electronSpeed;
-                e.y = ledgeY - 10; // Lock to ledge in case user slides it
-                if (e.x >= dropZoneX + (Math.random()*10 - 5)) { // Slight randomness to drop
+                e.y = ledgeY - 10; 
+                if (e.x >= dropZoneX + (Math.random()*10 - 5)) {
                     e.state = 'falling';
                     e.x = dropZoneX;
                 }
@@ -572,28 +553,51 @@
                 e.vy += gravity;
                 e.y += e.vy;
 
-                // Hit the ground
                 if (e.y >= floorY - 10) {
                     e.y = floorY - 10;
                     e.state = 'valence';
                     e.vy = 0;
                     
-                    // Trigger Photon!
                     photons.push({
-                        x: e.x,
-                        y: e.y,
-                        angle: Math.PI * 1.5 + (Math.random() * 1.0 - 0.5), // Shoot upwards
+                        x: e.x, y: e.y,
+                        angle: Math.PI * 1.5 + (Math.random() * 1.0 - 0.5),
                         speed: 4 + Math.random() * 3,
-                        life: 1.0,
-                        color: color
+                        life: 1.0, color: color
                     });
                     createSparks(e.x, e.y + 10, color);
                 }
             }
             else if (e.state === 'valence') {
                 e.x += electronSpeed;
-                // Delete once it goes off screen
-                if (e.x > canvas.width + 50) electrons.splice(i, 1);
+                // Reach the end of the line, turn down
+                if (e.x >= returnRightX) {
+                    e.x = returnRightX;
+                    e.state = 'return_down';
+                }
+            }
+            else if (e.state === 'return_down') {
+                e.y += electronSpeed;
+                // Hit bottom wire, turn left
+                if (e.y >= returnBottomY) {
+                    e.y = returnBottomY;
+                    e.state = 'return_left';
+                }
+            }
+            else if (e.state === 'return_left') {
+                e.x -= electronSpeed;
+                // Reach under the pump, turn up
+                if (e.x <= pumpX + pumpWidth / 2) {
+                    e.x = pumpX + pumpWidth / 2;
+                    e.state = 'return_up';
+                }
+            }
+            else if (e.state === 'return_up') {
+                e.y -= electronSpeed;
+                // Enter pump to repeat cycle
+                if (e.y <= floorY) {
+                    e.y = floorY;
+                    e.state = 'pumping';
+                }
             }
 
             // Draw Trail
@@ -616,9 +620,8 @@
             ctx.shadowBlur = 15;
             ctx.shadowColor = "#00ffcc";
             ctx.fill();
-            ctx.shadowBlur = 0; // Reset
+            ctx.shadowBlur = 0; 
             
-            // Minus sign
             ctx.fillStyle = "#000";
             ctx.font = "bold 12px Inter";
             ctx.textAlign = "center";
@@ -626,7 +629,7 @@
             ctx.fillText("-", e.x, e.y + 1);
         }
 
-        // 4. Update & Draw Particles (Sparks)
+        // 5. Update & Draw Particles (Sparks)
         for (let i = particles.length - 1; i >= 0; i--) {
             let p = particles[i];
             p.x += p.vx;
@@ -636,26 +639,22 @@
 
             ctx.fillStyle = p.color;
             ctx.globalAlpha = Math.max(0, p.life);
-            ctx.beginPath();
-            ctx.arc(p.x, p.y, 2, 0, Math.PI*2);
-            ctx.fill();
-            
+            ctx.beginPath(); ctx.arc(p.x, p.y, 2, 0, Math.PI*2); ctx.fill();
             if (p.life <= 0) particles.splice(i, 1);
         }
         ctx.globalAlpha = 1.0;
 
-        // 5. Update & Draw Photons (Light Waves)
+        // 6. Update & Draw Photons
         for (let i = photons.length - 1; i >= 0; i--) {
             let p = photons[i];
             p.x += Math.cos(p.angle) * p.speed;
             p.y += Math.sin(p.angle) * p.speed;
-            p.life -= 0.01; // Fade out
+            p.life -= 0.01; 
 
             ctx.beginPath();
             let waveAmplitude = 8;
             let waveFrequency = 0.4;
             
-            // Draw sine wave path
             for(let w = 0; w < 40; w++) {
                 let wx = p.x - Math.cos(p.angle) * w; 
                 let wy = p.y - Math.sin(p.angle) * w;
@@ -683,7 +682,6 @@
                  ctx.font = "600 11px Inter";
                  ctx.fillText("~ Photon", p.x + 15, p.y);
             }
-            
             if (p.life <= 0) photons.splice(i, 1);
         }
         ctx.globalAlpha = 1.0;
@@ -691,7 +689,6 @@
         requestAnimationFrame(drawScene);
     }
 
-    // Start Simulation
     drawScene();
 </script>
 
