@@ -56,7 +56,7 @@
             width: 260px;
         }
 
-        #dictionary h3 {
+        #dictionary h3, #spectrum-panel h3 {
             margin: 0 0 10px 0;
             color: var(--primary);
             font-size: 14px;
@@ -84,16 +84,6 @@
             top: 20px;
             right: 20px;
             width: 260px;
-        }
-
-        #spectrum-panel h3 {
-            margin: 0 0 10px 0;
-            color: var(--primary);
-            font-size: 14px;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            border-bottom: 1px solid var(--panel-border);
-            padding-bottom: 8px;
         }
 
         .spectrum-bar {
@@ -135,7 +125,7 @@
             transform: translateX(-50%);
             display: flex;
             align-items: center;
-            gap: 40px;
+            gap: 30px;
             padding: 20px 40px;
         }
 
@@ -143,8 +133,8 @@
             background: var(--primary);
             color: #000;
             border: none;
-            padding: 12px 28px;
-            font-size: 16px;
+            padding: 12px 24px;
+            font-size: 15px;
             font-weight: 800;
             border-radius: 8px;
             cursor: pointer;
@@ -160,6 +150,18 @@
         
         button:active {
             transform: translateY(1px);
+        }
+
+        /* Reset Button Specific Styles */
+        .danger-btn {
+            background: #ff4444;
+            color: white;
+            box-shadow: 0 0 20px rgba(255, 68, 68, 0.3);
+        }
+
+        .danger-btn:hover {
+            background: #ff6666;
+            box-shadow: 0 0 30px rgba(255, 68, 68, 0.5);
         }
 
         .toggle-container {
@@ -222,7 +224,7 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            width: 200px;
+            width: 180px;
         }
 
         input[type=range] {
@@ -296,6 +298,7 @@
 
     <div class="glass-panel" id="controls">
         <button id="dropBtn">Add Electron</button>
+        <button id="resetBtn" class="danger-btn">Reset</button>
 
         <div class="toggle-container">
             <label class="switch">
@@ -326,6 +329,7 @@
     const gapSlider = document.getElementById('gapHeight');
     const evDisplay = document.getElementById('evDisplay');
     const dropBtn = document.getElementById('dropBtn');
+    const resetBtn = document.getElementById('resetBtn'); // NEW: Reset Button Reference
     const continuousMode = document.getElementById('continuousMode');
     const flowRateSlider = document.getElementById('flowRate');
     const spectrumMarker = document.getElementById('spectrum-marker');
@@ -367,7 +371,7 @@
         canvas.width = window.innerWidth;
         canvas.height = window.innerHeight;
         // Adjust geometry based on screen size
-        floorY = canvas.height - 250; // Lifted up to make room for bottom wire
+        floorY = canvas.height - 250; 
         dropZoneX = canvas.width / 2;
         pumpX = 80;
         pumpWidth = 90;
@@ -380,12 +384,19 @@
     // Physics Constants
     const gravity = 0.6;
     const electronSpeed = 6;
-    const MAX_ELECTRONS = 150; // Prevent browser crash
+    const MAX_ELECTRONS = 150; 
 
     let electrons = [];
     let photons = [];
     let particles = [];
     let frameCount = 0;
+
+    // NEW: Reset functionality
+    resetBtn.addEventListener('click', () => {
+        electrons = [];
+        photons = [];
+        particles = [];
+    });
 
     function getRatio(ev) { return (ev - 1.8) / (3.1 - 1.8); }
     function getLEDColor(ev) {
@@ -402,7 +413,7 @@
     gapSlider.dispatchEvent(new Event('input'));
 
     function spawnElectron() {
-        if (electrons.length >= MAX_ELECTRONS) return; // Circuit limit
+        if (electrons.length >= MAX_ELECTRONS) return; 
         const ev = parseFloat(gapSlider.value);
         const ledgeY = floorY - (ev * 160);
 
@@ -569,7 +580,6 @@
             }
             else if (e.state === 'valence') {
                 e.x += electronSpeed;
-                // Reach the end of the line, turn down
                 if (e.x >= returnRightX) {
                     e.x = returnRightX;
                     e.state = 'return_down';
@@ -577,7 +587,6 @@
             }
             else if (e.state === 'return_down') {
                 e.y += electronSpeed;
-                // Hit bottom wire, turn left
                 if (e.y >= returnBottomY) {
                     e.y = returnBottomY;
                     e.state = 'return_left';
@@ -585,7 +594,6 @@
             }
             else if (e.state === 'return_left') {
                 e.x -= electronSpeed;
-                // Reach under the pump, turn up
                 if (e.x <= pumpX + pumpWidth / 2) {
                     e.x = pumpX + pumpWidth / 2;
                     e.state = 'return_up';
@@ -593,7 +601,6 @@
             }
             else if (e.state === 'return_up') {
                 e.y -= electronSpeed;
-                // Enter pump to repeat cycle
                 if (e.y <= floorY) {
                     e.y = floorY;
                     e.state = 'pumping';
