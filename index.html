@@ -211,7 +211,7 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            width: 200px; /* narrowed slightly to fit the new slider */
+            width: 200px;
         }
 
         input[type=range] {
@@ -265,6 +265,7 @@
         <h3>How it Works</h3>
         <ul>
             <li><span class="highlight" style="color: #00ffcc;">Electrons (Cyan):</span> Flowing electrical current.</li>
+            <li><span class="highlight" style="color: #ffaa00;">Battery Pump:</span> Lifts electrons up to the top highway to keep the circuit flowing.</li>
             <li><span class="highlight">Conduction Band:</span> The high-energy "highway" where current enters.</li>
             <li><span class="highlight">Valence Band:</span> The lower-energy resting state.</li>
             <li><span class="highlight" style="color: #ff4444;">Forbidden Zone:</span> Electrons must jump the gap entirely.</li>
@@ -336,6 +337,8 @@
     const floorY = canvas.height - 180;
     const dropZoneX = canvas.width / 2;
     const electronSpeed = 6;
+    const pumpX = 80;
+    const pumpWidth = 90;
 
     // Simulation State
     let electrons = [];
@@ -369,10 +372,10 @@
         const ledgeY = floorY - (ev * 160); // Calculate current height
 
         electrons.push({
-            x: -20, // Start off-screen left
-            y: ledgeY - 10,
+            x: pumpX + (pumpWidth / 2), // Start directly inside the pump
+            y: floorY, // Start at the bottom
             vy: 0,
-            state: 'conduction', // 'conduction' -> 'falling' -> 'valence'
+            state: 'pumping', // 'pumping' -> 'conduction' -> 'falling' -> 'valence'
             trail: []
         });
     }
@@ -420,21 +423,51 @@
         ctx.stroke();
 
         // 2. Draw Environments
-        // Conduction Band (Top)
+
+        // Battery / Pump (Left Side)
+        ctx.fillStyle = "rgba(255, 170, 0, 0.1)";
+        ctx.fillRect(pumpX, ledgeY, pumpWidth, floorY - ledgeY);
+        
+        ctx.strokeStyle = "#ffaa00";
+        ctx.lineWidth = 3;
+        ctx.strokeRect(pumpX, ledgeY, pumpWidth, floorY - ledgeY);
+
+        // Battery/Pump Text
+        ctx.save();
+        ctx.translate(pumpX + pumpWidth / 2, (floorY + ledgeY) / 2);
+        ctx.rotate(-Math.PI / 2);
+        ctx.fillStyle = "#ffaa00";
+        ctx.font = "bold 18px Inter";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillText("BATTERY / PUMP", 0, 0);
+        ctx.restore();
+
+        // Animated Upward Arrows inside the pump
+        ctx.fillStyle = "rgba(255, 170, 0, 0.4)";
+        ctx.font = "20px Inter";
+        ctx.textAlign = "center";
+        let arrowOffset = (frameCount * 2) % 40;
+        for(let y = floorY - arrowOffset; y > ledgeY; y -= 40) {
+            ctx.fillText("▲", pumpX + 20, y);
+            ctx.fillText("▲", pumpX + pumpWidth - 20, y);
+        }
+
+        // Conduction Band (Top Highway)
         ctx.fillStyle = 'rgba(0, 255, 204, 0.05)';
-        ctx.fillRect(0, ledgeY - 30, dropZoneX, 30);
+        ctx.fillRect(pumpX + pumpWidth, ledgeY - 30, dropZoneX - (pumpX + pumpWidth), 30);
         ctx.strokeStyle = 'rgba(0, 255, 204, 0.3)';
         ctx.lineWidth = 2;
-        ctx.beginPath(); ctx.moveTo(0, ledgeY); ctx.lineTo(dropZoneX, ledgeY); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(pumpX + pumpWidth, ledgeY); ctx.lineTo(dropZoneX, ledgeY); ctx.stroke();
         
         ctx.fillStyle = '#00ffcc';
         ctx.font = "bold 14px Inter";
         ctx.textAlign = "left";
         ctx.globalAlpha = 0.5;
-        ctx.fillText("CONDUCTION BAND (HIGH ENERGY)", 20, ledgeY - 40);
+        ctx.fillText("CONDUCTION BAND (HIGH ENERGY)", pumpX + pumpWidth + 20, ledgeY - 40);
         ctx.globalAlpha = 1.0;
 
-        // Valence Band (Bottom)
+        // Valence Band (Bottom Floor)
         ctx.fillStyle = color;
         ctx.globalAlpha = 0.05;
         ctx.fillRect(dropZoneX, floorY, canvas.width - dropZoneX, 30);
@@ -457,8 +490,7 @@
         ctx.stroke();
         ctx.setLineDash([]);
 
-        // Continuous Spawning Logic tied to the new slider
-        // Higher slider value = smaller interval = faster spawning
+        // Continuous Spawning Logic tied to the slider
         const currentFlowDelay = 65 - parseInt(flowRateSlider.value); 
         if (continuousMode.checked && frameCount % currentFlowDelay === 0) {
             spawnElectron();
@@ -473,7 +505,14 @@
             if (e.trail.length > 10) e.trail.shift();
 
             // State Machine
-            if (e.state === 'conduction') {
+            if (e.state === 'pumping') {
+                e.y -= electronSpeed; // Lift the electron up the pump
+                if (e.y <= ledgeY - 10) {
+                    e.y = ledgeY - 10;
+                    e.state = 'conduction';
+                }
+            }
+            else if (e.state === 'conduction') {
                 e.x += electronSpeed;
                 e.y = ledgeY - 10; // Lock to ledge in case user slides it
                 if (e.x >= dropZoneX + (Math.random()*10 - 5)) { // Slight randomness to drop
@@ -505,6 +544,7 @@
             }
             else if (e.state === 'valence') {
                 e.x += electronSpeed;
+                // Delete once it goes off screen
                 if (e.x > canvas.width + 50) electrons.splice(i, 1);
             }
 
@@ -590,7 +630,6 @@
             ctx.stroke();
             ctx.shadowBlur = 0;
 
-            // Optional "Photon" label on a few of them so it's not overwhelming
             if (p.life > 0.8 && i % 4 === 0) {
                  ctx.fillStyle = "white";
                  ctx.font = "600 11px Inter";
