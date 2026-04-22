@@ -177,15 +177,15 @@
 
   /* Behind the Scenes Section */
   #bts { background: var(--bg2); }
-  .bts-container { position: relative; margin-top: 3.5rem; }
+  .bts-container { position: relative; margin-top: 1.5rem; }
   
   .bts-wrapper { 
-    max-height: 380px; /* Adjust this to show exactly how much of the first row you want */
+    max-height: 380px; 
     overflow: hidden; 
     transition: max-height 0.8s cubic-bezier(0.2, 0.8, 0.2, 1); 
   }
   .bts-wrapper.expanded { 
-    max-height: 3000px; /* Big enough to fit all your photos when expanded */
+    max-height: 3000px; 
   }
   
   .bts-grid { 
@@ -446,25 +446,26 @@
 <section id="bts">
   <div class="reveal" style="max-width:600px; margin-bottom: 1rem;">
     <h2 class="s-title">Behind The Scenes</h2>
-    <p class="s-desc">A peek into the workspace, messy node trees, wireframes, and raw renders that make up the final products.</p>
   </div>
   
   <div class="bts-container reveal" id="bts-container" style="transition-delay: .1s">
     <div class="bts-wrapper" id="bts-wrapper">
       <div class="bts-grid">
-        <img src="https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=600&auto=format&fit=crop" alt="BTS 1">
-        <img src="https://images.unsplash.com/photo-1550745165-9bc0b252726f?q=80&w=600&auto=format&fit=crop" alt="BTS 2">
-        <img src="https://images.unsplash.com/photo-1614729939124-032f0b56c9ce?q=80&w=600&auto=format&fit=crop" alt="BTS 3">
-        <img src="https://images.unsplash.com/photo-1634017839464-5c339ebe3cb4?q=80&w=600&auto=format&fit=crop" alt="BTS 4">
-        <img src="https://images.unsplash.com/photo-1618005192384-a83a8bd57fbe?q=80&w=600&auto=format&fit=crop" alt="BTS 5">
-        <img src="https://images.unsplash.com/photo-1550751827-4bd374c3f58b?q=80&w=600&auto=format&fit=crop" alt="BTS 6">
-        <img src="https://images.unsplash.com/photo-1620121692029-d088224ddc74?q=80&w=600&auto=format&fit=crop" alt="BTS 7">
-        <img src="https://images.unsplash.com/photo-1614730321146-b6fa6a46bcb4?q=80&w=600&auto=format&fit=crop" alt="BTS 8">
+        <img src="Screenshot 2026-04-22 at 1.02.38 PM.jpg" alt="BTS Code Snippet">
+        <img src="Screenshot 2026-04-22 at 1.03.04 PM.jpg" alt="BTS Blender Couch">
+        <img src="Screenshot 2026-04-22 at 1.03.13 PM.jpg" alt="BTS Blender Rigging">
+        <img src="Screenshot 2026-04-22 at 1.03.23 PM.png" alt="BTS DaVinci Resolve Nodes 1">
+        <img src="Screenshot 2026-04-22 at 1.03.37 PM.jpg" alt="BTS DaVinci Resolve Nodes 2">
+        <img src="Screenshot 2026-04-22 at 1.03.54 PM.jpg" alt="BTS DaVinci Resolve Timeline">
+        <img src="Screenshot 2026-04-22 at 1.04.06 PM.png" alt="BTS DaVinci Resolve Nodes 3">
+        <img src="Screenshot 2026-04-22 at 1.04.25 PM.jpg" alt="BTS Blender Boat 1">
+        <img src="Screenshot 2026-04-22 at 1.04.40 PM.jpg" alt="BTS Blender Boat 2">
+        <img src="Screenshot 2026-04-22 at 1.04.54 PM.png" alt="BTS Blender Room">
       </div>
     </div>
     
     <div class="bts-overlay">
-      <button class="btn-primary" onclick="document.getElementById('bts-container').classList.add('expanded')">See More Photos</button>
+      <button class="btn-primary" onclick="document.getElementById('bts-container').classList.add('expanded')">See More</button>
     </div>
     
     <div class="bts-collapse-btn">
