@@ -56,7 +56,6 @@
             width: 260px;
         }
 
-        #dictionary h3 {
         #dictionary h3, #spectrum-panel h3 {
             margin: 0 0 10px 0;
             color: var(--primary);
@@ -85,16 +84,6 @@
             top: 20px;
             right: 20px;
             width: 260px;
-        }
-
-        #spectrum-panel h3 {
-            margin: 0 0 10px 0;
-            color: var(--primary);
-            font-size: 14px;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            border-bottom: 1px solid var(--panel-border);
-            padding-bottom: 8px;
         }
 
         .spectrum-bar {
@@ -136,7 +125,6 @@
             transform: translateX(-50%);
             display: flex;
             align-items: center;
-            gap: 40px;
             gap: 30px;
             padding: 20px 40px;
         }
@@ -145,8 +133,6 @@
             background: var(--primary);
             color: #000;
             border: none;
-            padding: 12px 28px;
-            font-size: 16px;
             padding: 12px 24px;
             font-size: 15px;
             font-weight: 800;
@@ -161,12 +147,11 @@
             box-shadow: 0 0 30px rgba(0, 255, 204, 0.5);
             background: #00e6b8;
         }
-
+        
         button:active {
             transform: translateY(1px);
         }
 
-        /* Reset Button Specific Styles */
         .danger-btn {
             background: #ff4444;
             color: white;
@@ -238,7 +223,6 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            width: 200px;
             width: 180px;
         }
 
@@ -285,6 +269,43 @@
             text-shadow: 0 0 10px rgba(255,255,255,0.3);
             margin-top: 5px;
         }
+
+        /* Custom Link Styles */
+        #custom-link {
+            position: absolute;
+            bottom: 30px;
+            right: 30px;
+            background: var(--panel-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--panel-border);
+            padding: 10px 16px;
+            border-radius: 8px;
+            color: #fff;
+            text-decoration: none;
+            font-size: 13px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            z-index: 10;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+        }
+
+        #custom-link:hover {
+            background: rgba(0, 255, 204, 0.1);
+            border-color: var(--primary);
+            color: var(--primary);
+            transform: translateY(-2px);
+        }
+
+        #custom-link svg {
+            width: 18px;
+            height: 18px;
+            fill: currentColor;
+        }
+
     </style>
 </head>
 <body>
@@ -335,16 +356,23 @@
         </div>
     </div>
 
+    <a href="https://github.com/yourusername" id="custom-link" target="_blank">
+        <svg viewBox="0 0 24 24">
+            <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
+        </svg>
+        View on GitHub
+    </a>
+
     <canvas id="ledCanvas"></canvas>
 
 <script>
     const canvas = document.getElementById('ledCanvas');
     const ctx = canvas.getContext('2d');
-
+    
     const gapSlider = document.getElementById('gapHeight');
     const evDisplay = document.getElementById('evDisplay');
     const dropBtn = document.getElementById('dropBtn');
-    const resetBtn = document.getElementById('resetBtn'); // NEW: Reset Button Reference
+    const resetBtn = document.getElementById('resetBtn'); 
     const continuousMode = document.getElementById('continuousMode');
     const flowRateSlider = document.getElementById('flowRate');
     const spectrumMarker = document.getElementById('spectrum-marker');
@@ -386,7 +414,6 @@
         canvas.width = window.innerWidth;
         canvas.height = window.innerHeight;
         // Adjust geometry based on screen size
-        floorY = canvas.height - 250; // Lifted up to make room for bottom wire
         floorY = canvas.height - 250; 
         dropZoneX = canvas.width / 2;
         pumpX = 80;
@@ -400,7 +427,6 @@
     // Physics Constants
     const gravity = 0.6;
     const electronSpeed = 6;
-    const MAX_ELECTRONS = 150; // Prevent browser crash
     const MAX_ELECTRONS = 150; 
 
     let electrons = [];
@@ -408,7 +434,6 @@
     let particles = [];
     let frameCount = 0;
 
-    // NEW: Reset functionality
     resetBtn.addEventListener('click', () => {
         electrons = [];
         photons = [];
@@ -430,7 +455,6 @@
     gapSlider.dispatchEvent(new Event('input'));
 
     function spawnElectron() {
-        if (electrons.length >= MAX_ELECTRONS) return; // Circuit limit
         if (electrons.length >= MAX_ELECTRONS) return; 
         const ev = parseFloat(gapSlider.value);
         const ledgeY = floorY - (ev * 160);
@@ -499,7 +523,7 @@
         // Battery / Pump
         ctx.fillStyle = "rgba(255, 170, 0, 0.1)";
         ctx.fillRect(pumpX, ledgeY, pumpWidth, floorY - ledgeY);
-
+        
         ctx.strokeStyle = "#ffaa00";
         ctx.lineWidth = 3;
         ctx.strokeRect(pumpX, ledgeY, pumpWidth, floorY - ledgeY);
@@ -520,7 +544,7 @@
         ctx.strokeStyle = 'rgba(0, 255, 204, 0.3)';
         ctx.lineWidth = 2;
         ctx.beginPath(); ctx.moveTo(pumpX + pumpWidth, ledgeY); ctx.lineTo(dropZoneX, ledgeY); ctx.stroke();
-
+        
         ctx.fillStyle = '#00ffcc';
         ctx.font = "bold 14px Inter";
         ctx.textAlign = "left";
@@ -533,7 +557,7 @@
         ctx.globalAlpha = 0.05;
         ctx.fillRect(dropZoneX, floorY - 30, returnRightX - dropZoneX, 30);
         ctx.globalAlpha = 1.0;
-
+        
         ctx.fillStyle = color;
         ctx.textAlign = "center";
         ctx.globalAlpha = 0.5;
@@ -586,7 +610,7 @@
                     e.y = floorY - 10;
                     e.state = 'valence';
                     e.vy = 0;
-
+                    
                     photons.push({
                         x: e.x, y: e.y,
                         angle: Math.PI * 1.5 + (Math.random() * 1.0 - 0.5),
@@ -598,7 +622,6 @@
             }
             else if (e.state === 'valence') {
                 e.x += electronSpeed;
-                // Reach the end of the line, turn down
                 if (e.x >= returnRightX) {
                     e.x = returnRightX;
                     e.state = 'return_down';
@@ -606,7 +629,6 @@
             }
             else if (e.state === 'return_down') {
                 e.y += electronSpeed;
-                // Hit bottom wire, turn left
                 if (e.y >= returnBottomY) {
                     e.y = returnBottomY;
                     e.state = 'return_left';
@@ -614,7 +636,6 @@
             }
             else if (e.state === 'return_left') {
                 e.x -= electronSpeed;
-                // Reach under the pump, turn up
                 if (e.x <= pumpX + pumpWidth / 2) {
                     e.x = pumpX + pumpWidth / 2;
                     e.state = 'return_up';
@@ -622,7 +643,6 @@
             }
             else if (e.state === 'return_up') {
                 e.y -= electronSpeed;
-                // Enter pump to repeat cycle
                 if (e.y <= floorY) {
                     e.y = floorY;
                     e.state = 'pumping';
@@ -650,7 +670,7 @@
             ctx.shadowColor = "#00ffcc";
             ctx.fill();
             ctx.shadowBlur = 0; 
-
+            
             ctx.fillStyle = "#000";
             ctx.font = "bold 12px Inter";
             ctx.textAlign = "center";
@@ -683,21 +703,21 @@
             ctx.beginPath();
             let waveAmplitude = 8;
             let waveFrequency = 0.4;
-
+            
             for(let w = 0; w < 40; w++) {
                 let wx = p.x - Math.cos(p.angle) * w; 
                 let wy = p.y - Math.sin(p.angle) * w;
-
+                
                 let perpAngle = p.angle + Math.PI / 2;
                 let offset = Math.sin(w * waveFrequency - (frameCount*0.2)) * waveAmplitude;
-
+                
                 wx += Math.cos(perpAngle) * offset;
                 wy += Math.sin(perpAngle) * offset;
 
                 if(w === 0) ctx.moveTo(wx, wy);
                 else ctx.lineTo(wx, wy);
             }
-
+            
             ctx.strokeStyle = p.color;
             ctx.lineWidth = 3;
             ctx.globalAlpha = Math.max(0, p.life);
