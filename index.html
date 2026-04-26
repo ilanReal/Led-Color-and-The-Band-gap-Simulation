@@ -65,6 +65,23 @@
             border-bottom: 1px solid var(--panel-border);
             padding-bottom: 8px;
         }
+        
+        #dictionary h3 {
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: color 0.2s;
+        }
+        
+        #dictionary h3:hover {
+            color: #fff;
+        }
+
+        .dropdown-icon {
+            font-size: 10px;
+            transition: transform 0.3s ease;
+        }
 
         #dictionary p, #dictionary li {
             font-size: 12px;
@@ -76,6 +93,8 @@
         #dictionary ul {
             padding-left: 20px;
             margin: 0 0 15px 0;
+            transition: all 0.3s ease;
+            overflow: hidden;
         }
 
         .highlight { color: #fff; font-weight: 600; }
@@ -124,9 +143,52 @@
             left: 50%;
             transform: translateX(-50%);
             display: flex;
+            flex-direction: column;
+            align-items: stretch;
+            padding: 15px 30px;
+        }
+        
+        .controls-header {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 15px;
+            position: relative;
+        }
+
+        .drag-handle {
+            width: 40px;
+            height: 4px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 2px;
+            cursor: grab;
+        }
+        
+        .drag-handle:active { cursor: grabbing; }
+
+        .minimize-btn {
+            position: absolute;
+            right: -10px;
+            background: transparent;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: #aaa;
+            font-size: 10px;
+            padding: 4px 8px;
+            box-shadow: none;
+            font-weight: 600;
+        }
+        
+        .minimize-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .controls-content {
+            display: flex;
             align-items: center;
             gap: 30px;
-            padding: 20px 40px;
         }
 
         button {
@@ -270,7 +332,6 @@
             margin-top: 5px;
         }
 
-        /* Custom Link Styles */
         #custom-link {
             position: absolute;
             bottom: 30px;
@@ -305,14 +366,13 @@
             height: 18px;
             fill: currentColor;
         }
-
     </style>
 </head>
 <body>
 
     <div class="glass-panel draggable" id="dictionary">
-        <h3>How it Works</h3>
-        <ul>
+        <h3 id="dictToggle">How it Works <span class="dropdown-icon" id="dictArrow">▼</span></h3>
+        <ul id="dictContent">
             <li><span class="highlight" style="color: #00ffcc;">The Closed Loop:</span> Notice how the electrons travel along the bottom wire back to the pump. In a real circuit, they are endlessly recycled!</li>
             <li><span class="highlight" style="color: #ffaa00;">Battery Pump:</span> Lifts returning electrons up to the top highway to keep the circuit flowing.</li>
             <li><span class="highlight">Conduction Band:</span> The high-energy "highway".</li>
@@ -332,27 +392,34 @@
         </div>
     </div>
 
-    <div class="glass-panel" id="controls">
-        <button id="dropBtn">Add Electron</button>
-        <button id="resetBtn" class="danger-btn">Reset</button>
-
-        <div class="toggle-container">
-            <label class="switch">
-                <input type="checkbox" id="continuousMode" checked>
-                <span class="slider"></span>
-            </label>
-            <span class="toggle-label" style="margin-bottom: 0;">Continuous</span>
+    <div class="glass-panel draggable" id="controls">
+        <div class="controls-header">
+            <div class="drag-handle"></div>
+            <button id="minimizeBtn" class="minimize-btn">_ MINIMIZE</button>
         </div>
+        
+        <div class="controls-content" id="controlsContent">
+            <button id="dropBtn">Add Electron</button>
+            <button id="resetBtn" class="danger-btn">Reset</button>
 
-        <div class="slider-group">
-            <div class="toggle-label">Flow Rate</div>
-            <input type="range" id="flowRate" min="2" max="60" step="1" value="45">
-        </div>
+            <div class="toggle-container">
+                <label class="switch">
+                    <input type="checkbox" id="continuousMode" checked>
+                    <span class="slider"></span>
+                </label>
+                <span class="toggle-label" style="margin-bottom: 0;">Continuous</span>
+            </div>
 
-        <div class="slider-group" style="width: 250px;">
-            <div class="toggle-label">Band Gap (Drop Height)</div>
-            <input type="range" id="gapHeight" min="1.8" max="3.1" step="0.05" value="2.0">
-            <div id="evDisplay">2.00 eV</div>
+            <div class="slider-group">
+                <div class="toggle-label">Flow Rate</div>
+                <input type="range" id="flowRate" min="2" max="60" step="1" value="45">
+            </div>
+
+            <div class="slider-group" style="width: 250px;">
+                <div class="toggle-label">Band Gap (Drop Height)</div>
+                <input type="range" id="gapHeight" min="1.8" max="3.1" step="0.05" value="2.0">
+                <div id="evDisplay">2.00 eV</div>
+            </div>
         </div>
     </div>
 
@@ -369,6 +436,7 @@
     const canvas = document.getElementById('ledCanvas');
     const ctx = canvas.getContext('2d');
     
+    // UI Elements
     const gapSlider = document.getElementById('gapHeight');
     const evDisplay = document.getElementById('evDisplay');
     const dropBtn = document.getElementById('dropBtn');
@@ -376,6 +444,26 @@
     const continuousMode = document.getElementById('continuousMode');
     const flowRateSlider = document.getElementById('flowRate');
     const spectrumMarker = document.getElementById('spectrum-marker');
+    
+    // Toggles
+    const dictToggle = document.getElementById('dictToggle');
+    const dictContent = document.getElementById('dictContent');
+    const dictArrow = document.getElementById('dictArrow');
+    
+    dictToggle.addEventListener('click', () => {
+        const isHidden = dictContent.style.display === 'none';
+        dictContent.style.display = isHidden ? 'block' : 'none';
+        dictArrow.innerText = isHidden ? '▼' : '▶';
+    });
+
+    const minimizeBtn = document.getElementById('minimizeBtn');
+    const controlsContent = document.getElementById('controlsContent');
+    
+    minimizeBtn.addEventListener('click', () => {
+        const isHidden = controlsContent.style.display === 'none';
+        controlsContent.style.display = isHidden ? 'flex' : 'none';
+        minimizeBtn.innerText = isHidden ? '_ MINIMIZE' : '□ EXPAND';
+    });
 
     // Drag Logic for Panels
     const draggables = document.querySelectorAll('.draggable');
@@ -385,7 +473,21 @@
 
     draggables.forEach(panel => {
         panel.addEventListener('mousedown', (e) => {
+            // Ignore if clicking an interactive element (buttons, sliders, toggles)
+            const tag = e.target.tagName.toLowerCase();
+            if (['input', 'button', 'span', 'h3'].includes(tag)) return;
+
             activePanel = panel;
+            
+            // If the element is centered via transform (like #controls), clear it to map 1:1 to the mouse
+            if (window.getComputedStyle(panel).transform !== 'none') {
+                const rect = panel.getBoundingClientRect();
+                panel.style.transform = 'none';
+                panel.style.left = rect.left + 'px';
+                panel.style.top = rect.top + 'px';
+                panel.style.bottom = 'auto'; // Break CSS bottom pin
+            }
+
             const rect = panel.getBoundingClientRect();
             offsetX = e.clientX - rect.left;
             offsetY = e.clientY - rect.top;
