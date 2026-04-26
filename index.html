@@ -371,8 +371,8 @@
 <body>
 
     <div class="glass-panel draggable" id="dictionary">
-        <h3 id="dictToggle">How it Works <span class="dropdown-icon" id="dictArrow">▼</span></h3>
-        <ul id="dictContent">
+        <h3 id="dictToggle">How it Works <span class="dropdown-icon" id="dictArrow">▶</span></h3>
+        <ul id="dictContent" style="display: none;">
             <li><span class="highlight" style="color: #00ffcc;">The Closed Loop:</span> Notice how the electrons travel along the bottom wire back to the pump. In a real circuit, they are endlessly recycled!</li>
             <li><span class="highlight" style="color: #ffaa00;">Battery Pump:</span> Lifts returning electrons up to the top highway to keep the circuit flowing.</li>
             <li><span class="highlight">Conduction Band:</span> The high-energy "highway".</li>
@@ -404,7 +404,7 @@
 
             <div class="toggle-container">
                 <label class="switch">
-                    <input type="checkbox" id="continuousMode" checked>
+                    <input type="checkbox" id="continuousMode">
                     <span class="slider"></span>
                 </label>
                 <span class="toggle-label" style="margin-bottom: 0;">Continuous</span>
