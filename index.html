@@ -373,11 +373,11 @@
     <div class="glass-panel draggable" id="dictionary">
         <h3 id="dictToggle">How it Works <span class="dropdown-icon" id="dictArrow">▶</span></h3>
         <ul id="dictContent" style="display: none;">
-            <li><span class="highlight" style="color: #00ffcc;">The Closed Loop:</span> Notice how the electrons travel along the bottom wire back to the pump. In a real circuit, they are endlessly recycled!</li>
-            <li><span class="highlight" style="color: #ffaa00;">Battery Pump:</span> Lifts returning electrons up to the top highway to keep the circuit flowing.</li>
+            <li><span class="highlight" style="color: #00ffcc;">The Closed Loop:</span> Notice how the electrons travel left along the bottom wire back to the pump. They are endlessly recycled!</li>
+            <li><span class="highlight" style="color: #ffaa00;">Battery Pump:</span> Lifts returning electrons up to the top highway, gaining energy.</li>
             <li><span class="highlight">Conduction Band:</span> The high-energy "highway".</li>
             <li><span class="highlight">Valence Band:</span> The lower-energy resting state.</li>
-            <li><span class="highlight">Photons (Waves):</span> The energy lost in the fall is emitted as light!</li>
+            <li><span class="highlight">Photons (Waves):</span> The energy lost in the single drop is emitted as light!</li>
         </ul>
     </div>
 
@@ -465,7 +465,7 @@
         minimizeBtn.innerText = isHidden ? '_ MINIMIZE' : '□ EXPAND';
     });
 
-    // Drag Logic for Panels
+    // Drag Logic
     const draggables = document.querySelectorAll('.draggable');
     let activePanel = null;
     let offsetX = 0;
@@ -473,19 +473,17 @@
 
     draggables.forEach(panel => {
         panel.addEventListener('mousedown', (e) => {
-            // Ignore if clicking an interactive element (buttons, sliders, toggles)
             const tag = e.target.tagName.toLowerCase();
             if (['input', 'button', 'span', 'h3'].includes(tag)) return;
 
             activePanel = panel;
             
-            // If the element is centered via transform (like #controls), clear it to map 1:1 to the mouse
             if (window.getComputedStyle(panel).transform !== 'none') {
                 const rect = panel.getBoundingClientRect();
                 panel.style.transform = 'none';
                 panel.style.left = rect.left + 'px';
                 panel.style.top = rect.top + 'px';
-                panel.style.bottom = 'auto'; // Break CSS bottom pin
+                panel.style.bottom = 'auto'; 
             }
 
             const rect = panel.getBoundingClientRect();
@@ -509,19 +507,17 @@
         }
     });
 
-    // Dynamic Sizing Elements
-    let floorY, dropZoneX, pumpX, pumpWidth, returnRightX, returnBottomY;
+    // Single Rectangle Geometry Setup
+    let floorY, dropZoneX, pumpX, pumpWidth;
 
     function resizeCanvas() {
         canvas.width = window.innerWidth;
         canvas.height = window.innerHeight;
-        // Adjust geometry based on screen size
+        
         floorY = canvas.height - 250; 
-        dropZoneX = canvas.width / 2;
-        pumpX = 80;
+        pumpX = 100;
         pumpWidth = 90;
-        returnRightX = canvas.width - 150;
-        returnBottomY = floorY + 130;
+        dropZoneX = canvas.width - 200; // Right side drop
     }
     window.addEventListener('resize', resizeCanvas);
     resizeCanvas();
@@ -558,9 +554,6 @@
 
     function spawnElectron() {
         if (electrons.length >= MAX_ELECTRONS) return; 
-        const ev = parseFloat(gapSlider.value);
-        const ledgeY = floorY - (ev * 160);
-
         electrons.push({
             x: pumpX + (pumpWidth / 2),
             y: floorY,
@@ -591,11 +584,10 @@
         const ledgeY = floorY - gapPx;
         const color = getLEDColor(ev);
 
-        // 1. Clear Screen
+        // 1. Clear Screen & Grid
         ctx.fillStyle = "rgba(10, 11, 16, 0.6)";
         ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-        // Grid Background
         ctx.strokeStyle = "rgba(255,255,255,0.03)";
         ctx.lineWidth = 1;
         ctx.beginPath();
@@ -603,29 +595,30 @@
         for(let y=0; y<canvas.height; y+=50) { ctx.moveTo(0, y); ctx.lineTo(canvas.width, y); }
         ctx.stroke();
 
-        // 2. Draw Return Circuit (Wire path)
+        // 2. Draw Rectangular Circuit Path
         ctx.strokeStyle = "rgba(0, 255, 204, 0.05)";
         ctx.lineWidth = 24;
         ctx.lineJoin = "round";
         ctx.lineCap = "round";
+        
         ctx.beginPath();
-        ctx.moveTo(dropZoneX - 20, floorY);
-        ctx.lineTo(returnRightX, floorY);
-        ctx.lineTo(returnRightX, returnBottomY);
-        ctx.lineTo(pumpX + pumpWidth / 2, returnBottomY);
-        ctx.lineTo(pumpX + pumpWidth / 2, floorY);
+        ctx.moveTo(pumpX + pumpWidth / 2, floorY);
+        ctx.lineTo(dropZoneX, floorY);        // Bottom (Valence)
+        ctx.lineTo(dropZoneX, ledgeY);        // Right (Drop)
+        ctx.lineTo(pumpX + pumpWidth / 2, ledgeY); // Top (Conduction)
+        ctx.lineTo(pumpX + pumpWidth / 2, floorY); // Left (Pump)
         ctx.stroke();
 
+        // Circuit Core Line
         ctx.strokeStyle = "rgba(255, 255, 255, 0.1)";
         ctx.lineWidth = 2;
         ctx.stroke();
 
         // 3. Draw Environments
-
+        
         // Battery / Pump
         ctx.fillStyle = "rgba(255, 170, 0, 0.1)";
         ctx.fillRect(pumpX, ledgeY, pumpWidth, floorY - ledgeY);
-        
         ctx.strokeStyle = "#ffaa00";
         ctx.lineWidth = 3;
         ctx.strokeRect(pumpX, ledgeY, pumpWidth, floorY - ledgeY);
@@ -640,34 +633,34 @@
         ctx.fillText("BATTERY / PUMP", 0, 0);
         ctx.restore();
 
-        // Conduction Band (Top Highway)
+        // Area Width for Text Centering
+        const blockWidth = dropZoneX - (pumpX + pumpWidth);
+        const centerX = (pumpX + pumpWidth) + blockWidth / 2;
+
+        // Conduction Band (Top)
         ctx.fillStyle = 'rgba(0, 255, 204, 0.05)';
-        ctx.fillRect(pumpX + pumpWidth, ledgeY - 30, dropZoneX - (pumpX + pumpWidth), 30);
-        ctx.strokeStyle = 'rgba(0, 255, 204, 0.3)';
-        ctx.lineWidth = 2;
-        ctx.beginPath(); ctx.moveTo(pumpX + pumpWidth, ledgeY); ctx.lineTo(dropZoneX, ledgeY); ctx.stroke();
+        ctx.fillRect(pumpX + pumpWidth, ledgeY - 15, blockWidth, 30);
         
         ctx.fillStyle = '#00ffcc';
         ctx.font = "bold 14px Inter";
-        ctx.textAlign = "left";
+        ctx.textAlign = "center";
         ctx.globalAlpha = 0.5;
-        ctx.fillText("CONDUCTION BAND", pumpX + pumpWidth + 20, ledgeY - 40);
+        ctx.fillText("CONDUCTION BAND", centerX, ledgeY - 25);
         ctx.globalAlpha = 1.0;
 
-        // Valence Band Area
+        // Valence Band (Bottom)
         ctx.fillStyle = color;
         ctx.globalAlpha = 0.05;
-        ctx.fillRect(dropZoneX, floorY - 30, returnRightX - dropZoneX, 30);
-        ctx.globalAlpha = 1.0;
+        ctx.fillRect(pumpX + pumpWidth, floorY - 15, blockWidth, 30);
         
         ctx.fillStyle = color;
         ctx.textAlign = "center";
         ctx.globalAlpha = 0.5;
-        ctx.fillText("VALENCE BAND", dropZoneX + (returnRightX - dropZoneX)/2, floorY - 40);
+        ctx.fillText("VALENCE BAND", centerX, floorY + 35);
         ctx.globalAlpha = 1.0;
 
-        // Drop Zone Indicator
-        ctx.strokeStyle = "rgba(255, 255, 255, 0.1)";
+        // Drop Zone Indicator (Dashed Line)
+        ctx.strokeStyle = "rgba(255, 255, 255, 0.2)";
         ctx.setLineDash([5, 10]);
         ctx.beginPath();
         ctx.moveTo(dropZoneX, ledgeY);
@@ -675,7 +668,7 @@
         ctx.stroke();
         ctx.setLineDash([]);
 
-        // Spawning
+        // Continuous Spawning
         const currentFlowDelay = 65 - parseInt(flowRateSlider.value); 
         if (continuousMode.checked && frameCount % currentFlowDelay === 0) {
             spawnElectron();
@@ -688,65 +681,47 @@
             e.trail.push({x: e.x, y: e.y});
             if (e.trail.length > 10) e.trail.shift();
 
-            // Circuit State Machine
+            // Single Rectangle State Machine
             if (e.state === 'pumping') {
+                e.x = pumpX + pumpWidth / 2; 
                 e.y -= electronSpeed;
-                if (e.y <= ledgeY - 10) {
-                    e.y = ledgeY - 10;
+                if (e.y <= ledgeY) {
+                    e.y = ledgeY;
                     e.state = 'conduction';
                 }
             }
             else if (e.state === 'conduction') {
+                e.y = ledgeY; // Hug the top line (auto-adjusts if user moves slider)
                 e.x += electronSpeed;
-                e.y = ledgeY - 10; 
-                if (e.x >= dropZoneX + (Math.random()*10 - 5)) {
-                    e.state = 'falling';
+                if (e.x >= dropZoneX) {
                     e.x = dropZoneX;
+                    e.state = 'falling';
                 }
             } 
             else if (e.state === 'falling') {
+                e.x = dropZoneX; // Hug the right line
                 e.vy += gravity;
                 e.y += e.vy;
 
-                if (e.y >= floorY - 10) {
-                    e.y = floorY - 10;
+                if (e.y >= floorY) {
+                    e.y = floorY;
                     e.state = 'valence';
                     e.vy = 0;
                     
                     photons.push({
                         x: e.x, y: e.y,
-                        angle: Math.PI * 1.5 + (Math.random() * 1.0 - 0.5),
+                        angle: Math.PI * 1.5 + (Math.random() * 2 - 1), // Radiate upwards/outwards
                         speed: 4 + Math.random() * 3,
                         life: 1.0, color: color
                     });
-                    createSparks(e.x, e.y + 10, color);
+                    createSparks(e.x, e.y, color);
                 }
             }
             else if (e.state === 'valence') {
-                e.x += electronSpeed;
-                if (e.x >= returnRightX) {
-                    e.x = returnRightX;
-                    e.state = 'return_down';
-                }
-            }
-            else if (e.state === 'return_down') {
-                e.y += electronSpeed;
-                if (e.y >= returnBottomY) {
-                    e.y = returnBottomY;
-                    e.state = 'return_left';
-                }
-            }
-            else if (e.state === 'return_left') {
-                e.x -= electronSpeed;
+                e.y = floorY; // Hug the bottom line
+                e.x -= electronSpeed; // Travel Left back to pump
                 if (e.x <= pumpX + pumpWidth / 2) {
                     e.x = pumpX + pumpWidth / 2;
-                    e.state = 'return_up';
-                }
-            }
-            else if (e.state === 'return_up') {
-                e.y -= electronSpeed;
-                if (e.y <= floorY) {
-                    e.y = floorY;
                     e.state = 'pumping';
                 }
             }
