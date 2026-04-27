@@ -20,12 +20,12 @@
             font-family: 'Inter', sans-serif;
             overflow: hidden;
             user-select: none;
-            display: flex; /* NEW: Flexbox to separate simulation and UI */
+            display: flex;
             height: 100vh;
         }
 
         #sim-container {
-            flex: 1; /* Takes up all remaining space */
+            flex: 1;
             position: relative;
         }
 
@@ -57,7 +57,7 @@
             border-radius: 16px;
             padding: 16px;
             box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-            position: relative; /* Changed from absolute to flow naturally in sidebar */
+            position: relative;
         }
 
         #dictionary h3, #spectrum-panel h3 {
@@ -172,7 +172,7 @@
 
         .controls-content {
             display: flex;
-            flex-direction: column; /* Stacked vertically to fit sidebar */
+            flex-direction: column;
             align-items: center;
             gap: 20px;
         }
@@ -417,18 +417,44 @@
         minimizeBtn.innerText = isHidden ? '_ MINIMIZE' : '□ EXPAND';
     });
 
+    // --- NEW: Camera & Panning Logic ---
+    let cameraX = 0;
+    let cameraY = 0;
+    let isDraggingCanvas = false;
+    let startDragX = 0;
+    let startDragY = 0;
+
+    canvas.style.cursor = 'grab';
+
+    canvas.addEventListener('mousedown', (e) => {
+        isDraggingCanvas = true;
+        startDragX = e.clientX - cameraX;
+        startDragY = e.clientY - cameraY;
+        canvas.style.cursor = 'grabbing';
+    });
+
+    window.addEventListener('mousemove', (e) => {
+        if (!isDraggingCanvas) return;
+        cameraX = e.clientX - startDragX;
+        cameraY = e.clientY - startDragY;
+    });
+
+    window.addEventListener('mouseup', () => {
+        isDraggingCanvas = false;
+        canvas.style.cursor = 'grab';
+    });
+
     // Single Rectangle Geometry Setup
     let floorY, dropZoneX, pumpX, pumpWidth;
 
     function resizeCanvas() {
-        // NEW: Base size off the container instead of the whole window so it respects the sidebar
         canvas.width = simContainer.clientWidth;
         canvas.height = simContainer.clientHeight;
         
         floorY = canvas.height - 250; 
         pumpX = 100;
         pumpWidth = 90;
-        dropZoneX = canvas.width - 200; // Right side drop
+        dropZoneX = canvas.width - 200; 
     }
     window.addEventListener('resize', resizeCanvas);
     resizeCanvas();
@@ -442,9 +468,8 @@
     let photons = [];
     let particles = [];
     let frameCount = 0;
-    let lightIntensity = 0; // Tracks overall LED brightness
+    let lightIntensity = 0; 
 
-    // NEW: Variable to hold the actual color of the LED currently emitting
     let activeLEDColor = getLEDColor(2.0);
 
     resetBtn.addEventListener('click', () => {
@@ -465,7 +490,6 @@
         evDisplay.innerText = `${ev.toFixed(2)} eV`;
         evDisplay.style.color = getLEDColor(ev);
         spectrumMarker.style.left = `${getRatio(ev) * 100}%`;
-        // Notice we DO NOT change `activeLEDColor` here anymore!
     });
     gapSlider.dispatchEvent(new Event('input'));
 
@@ -477,7 +501,7 @@
             vy: 0,
             state: 'pumping', 
             trail: [],
-            dropEv: 2.0 // Default memory
+            dropEv: 2.0 
         });
     }
 
@@ -501,23 +525,32 @@
         const gapPx = ev * 160; 
         const ledgeY = floorY - gapPx;
 
-        // Calculate dynamic brightness based on active photons
-        // Max brightness reached at ~15 simultaneous photons
         let targetIntensity = Math.min(1, photons.length / 15);
-        lightIntensity += (targetIntensity - lightIntensity) * 0.1; // Smooth transition
+        lightIntensity += (targetIntensity - lightIntensity) * 0.1;
 
-        // 1. Clear Screen & Grid
-        ctx.fillStyle = "rgba(10, 11, 16, 0.6)";
+        // 1. Clear Screen
+        ctx.fillStyle = "rgba(10, 11, 16, 1.0)";
         ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-        ctx.strokeStyle = "rgba(255,255,255,0.03)";
+        // 2. Draw Moving Grid (Offset by Camera for infinite feel)
+        ctx.strokeStyle = "rgba(255,255,255,0.04)";
         ctx.lineWidth = 1;
         ctx.beginPath();
-        for(let x=0; x<canvas.width; x+=50) { ctx.moveTo(x, 0); ctx.lineTo(x, canvas.height); }
-        for(let y=0; y<canvas.height; y+=50) { ctx.moveTo(0, y); ctx.lineTo(canvas.width, y); }
+        
+        let gridOffsetX = cameraX % 50;
+        let gridOffsetY = cameraY % 50;
+        if (gridOffsetX < 0) gridOffsetX += 50;
+        if (gridOffsetY < 0) gridOffsetY += 50;
+
+        for(let x = gridOffsetX; x < canvas.width; x += 50) { ctx.moveTo(x, 0); ctx.lineTo(x, canvas.height); }
+        for(let y = gridOffsetY; y < canvas.height; y += 50) { ctx.moveTo(0, y); ctx.lineTo(canvas.width, y); }
         ctx.stroke();
 
-        // 2. Draw Rectangular Circuit Path
+        // --- APPLY CAMERA PANNING TO WORLD ---
+        ctx.save();
+        ctx.translate(cameraX, cameraY);
+
+        // 3. Draw Rectangular Circuit Path
         ctx.strokeStyle = "rgba(0, 255, 204, 0.05)";
         ctx.lineWidth = 24;
         ctx.lineJoin = "round";
@@ -525,10 +558,10 @@
         
         ctx.beginPath();
         ctx.moveTo(pumpX + pumpWidth / 2, floorY);
-        ctx.lineTo(dropZoneX, floorY);        // Bottom (Valence)
-        ctx.lineTo(dropZoneX, ledgeY);        // Right (Drop)
-        ctx.lineTo(pumpX + pumpWidth / 2, ledgeY); // Top (Conduction)
-        ctx.lineTo(pumpX + pumpWidth / 2, floorY); // Left (Pump)
+        ctx.lineTo(dropZoneX, floorY);
+        ctx.lineTo(dropZoneX, ledgeY);
+        ctx.lineTo(pumpX + pumpWidth / 2, ledgeY);
+        ctx.lineTo(pumpX + pumpWidth / 2, floorY);
         ctx.stroke();
 
         // Circuit Core Line
@@ -536,49 +569,42 @@
         ctx.lineWidth = 2;
         ctx.stroke();
 
-        // 3. Draw The LED Bulb over the Drop Zone
+        // 4. Draw The LED Bulb over the Drop Zone
         ctx.save();
         const bulbRadius = 70;
         
-        // Base plate of the LED
         ctx.fillStyle = "#222";
         ctx.fillRect(dropZoneX - 80, floorY + 30, 160, 20);
         ctx.strokeStyle = "#555";
         ctx.lineWidth = 2;
         ctx.strokeRect(dropZoneX - 80, floorY + 30, 160, 20);
 
-        // Draw the Glass Dome encompassing the wire
         ctx.beginPath();
-        ctx.moveTo(dropZoneX - bulbRadius, floorY + 30);      // Bottom Left
-        ctx.lineTo(dropZoneX - bulbRadius, ledgeY - 20);      // Top Left
-        ctx.arc(dropZoneX, ledgeY - 20, bulbRadius, Math.PI, 0); // Dome Arc
-        ctx.lineTo(dropZoneX + bulbRadius, floorY + 30);      // Right Side
+        ctx.moveTo(dropZoneX - bulbRadius, floorY + 30);
+        ctx.lineTo(dropZoneX - bulbRadius, ledgeY - 20);
+        ctx.arc(dropZoneX, ledgeY - 20, bulbRadius, Math.PI, 0);
+        ctx.lineTo(dropZoneX + bulbRadius, floorY + 30);
         ctx.closePath();
 
-        // Fill color and shadow scale directly with photon intensity AND use the active falling color
         ctx.fillStyle = activeLEDColor;
         ctx.globalAlpha = 0.05 + (lightIntensity * 0.45);
         ctx.shadowBlur = 80 * lightIntensity;
         ctx.shadowColor = activeLEDColor;
         ctx.fill();
 
-        // Glass Outline
         ctx.strokeStyle = "rgba(255, 255, 255, 0.25)";
         ctx.globalAlpha = 1.0;
         ctx.shadowBlur = 0;
         ctx.lineWidth = 3;
         ctx.stroke();
 
-        // Glass reflection highlight
         ctx.beginPath();
         ctx.arc(dropZoneX - bulbRadius/2.5, ledgeY - 20 - bulbRadius/2.5, bulbRadius/5, 0, Math.PI*2);
         ctx.fillStyle = "rgba(255, 255, 255, 0.2)";
         ctx.fill();
         ctx.restore();
 
-        // 4. Draw Environments
-        
-        // Battery / Pump
+        // 5. Draw Environments
         ctx.fillStyle = "rgba(255, 170, 0, 0.1)";
         ctx.fillRect(pumpX, ledgeY, pumpWidth, floorY - ledgeY);
         ctx.strokeStyle = "#ffaa00";
@@ -595,11 +621,9 @@
         ctx.fillText("BATTERY / PUMP", 0, 0);
         ctx.restore();
 
-        // Area Width for Text Centering
         const blockWidth = dropZoneX - (pumpX + pumpWidth);
         const centerX = (pumpX + pumpWidth) + blockWidth / 2;
 
-        // Conduction Band (Top)
         ctx.fillStyle = 'rgba(0, 255, 204, 0.05)';
         ctx.fillRect(pumpX + pumpWidth, ledgeY - 15, blockWidth, 30);
         
@@ -610,7 +634,6 @@
         ctx.fillText("CONDUCTION BAND", centerX, ledgeY - 25);
         ctx.globalAlpha = 1.0;
 
-        // Valence Band (Bottom) uses activeLEDColor
         ctx.fillStyle = activeLEDColor;
         ctx.globalAlpha = 0.05;
         ctx.fillRect(pumpX + pumpWidth, floorY - 15, blockWidth, 30);
@@ -621,7 +644,6 @@
         ctx.fillText("VALENCE BAND", centerX, floorY + 35);
         ctx.globalAlpha = 1.0;
 
-        // Drop Zone Indicator (Dashed Line inside LED)
         ctx.strokeStyle = "rgba(255, 255, 255, 0.2)";
         ctx.setLineDash([5, 10]);
         ctx.beginPath();
@@ -630,20 +652,18 @@
         ctx.stroke();
         ctx.setLineDash([]);
 
-        // Continuous Spawning
         const currentFlowDelay = 65 - parseInt(flowRateSlider.value); 
         if (continuousMode.checked && frameCount % currentFlowDelay === 0) {
             spawnElectron();
         }
 
-        // 5. Update & Draw Electrons
+        // 6. Update & Draw Electrons
         for (let i = electrons.length - 1; i >= 0; i--) {
             let e = electrons[i];
 
             e.trail.push({x: e.x, y: e.y});
             if (e.trail.length > 10) e.trail.shift();
 
-            // Single Rectangle State Machine
             if (e.state === 'pumping') {
                 e.x = pumpX + pumpWidth / 2; 
                 e.y -= electronSpeed;
@@ -653,18 +673,16 @@
                 }
             }
             else if (e.state === 'conduction') {
-                e.y = ledgeY; // Hug the top line (auto-adjusts if user moves slider)
+                e.y = ledgeY; 
                 e.x += electronSpeed;
                 if (e.x >= dropZoneX) {
                     e.x = dropZoneX;
                     e.state = 'falling';
-                    
-                    // NEW: Lock in the current height/eV right as it starts falling!
                     e.dropEv = parseFloat(gapSlider.value); 
                 }
             } 
             else if (e.state === 'falling') {
-                e.x = dropZoneX; // Hug the right line
+                e.x = dropZoneX; 
                 e.vy += gravity;
                 e.y += e.vy;
 
@@ -673,13 +691,12 @@
                     e.state = 'valence';
                     e.vy = 0;
                     
-                    // NEW: Generate color strictly from the recorded drop height
                     const impactColor = getLEDColor(e.dropEv);
-                    activeLEDColor = impactColor; // Set global led bulb color
+                    activeLEDColor = impactColor; 
                     
                     photons.push({
                         x: e.x, y: e.y,
-                        angle: Math.PI * 1.5 + (Math.random() * 2 - 1), // Radiate upwards/outwards
+                        angle: Math.PI * 1.5 + (Math.random() * 2 - 1),
                         speed: 4 + Math.random() * 3,
                         life: 1.0, color: impactColor
                     });
@@ -687,15 +704,14 @@
                 }
             }
             else if (e.state === 'valence') {
-                e.y = floorY; // Hug the bottom line
-                e.x -= electronSpeed; // Travel Left back to pump
+                e.y = floorY; 
+                e.x -= electronSpeed; 
                 if (e.x <= pumpX + pumpWidth / 2) {
                     e.x = pumpX + pumpWidth / 2;
                     e.state = 'pumping';
                 }
             }
 
-            // Draw Trail
             if (e.trail.length > 1) {
                 ctx.beginPath();
                 ctx.moveTo(e.trail[0].x, e.trail[0].y);
@@ -708,7 +724,6 @@
                 ctx.stroke();
             }
 
-            // Draw Electron
             ctx.beginPath();
             ctx.arc(e.x, e.y, 8, 0, Math.PI * 2);
             ctx.fillStyle = "#fff";
@@ -724,7 +739,7 @@
             ctx.fillText("-", e.x, e.y + 1);
         }
 
-        // 6. Update & Draw Particles (Sparks)
+        // 7. Update & Draw Particles (Sparks)
         for (let i = particles.length - 1; i >= 0; i--) {
             let p = particles[i];
             p.x += p.vx;
@@ -739,7 +754,7 @@
         }
         ctx.globalAlpha = 1.0;
 
-        // 7. Update & Draw Photons
+        // 8. Update & Draw Photons
         for (let i = photons.length - 1; i >= 0; i--) {
             let p = photons[i];
             p.x += Math.cos(p.angle) * p.speed;
@@ -779,7 +794,9 @@
             }
             if (p.life <= 0) photons.splice(i, 1);
         }
+        
         ctx.globalAlpha = 1.0;
+        ctx.restore(); // MUST BE HERE TO END THE CAMERA PANNING
 
         requestAnimationFrame(drawScene);
     }
