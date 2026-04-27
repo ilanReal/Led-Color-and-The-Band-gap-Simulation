@@ -20,6 +20,13 @@
             font-family: 'Inter', sans-serif;
             overflow: hidden;
             user-select: none;
+            display: flex; /* NEW: Flexbox to separate simulation and UI */
+            height: 100vh;
+        }
+
+        #sim-container {
+            flex: 1; /* Takes up all remaining space */
+            position: relative;
         }
 
         canvas {
@@ -30,30 +37,27 @@
             z-index: 1;
         }
 
+        #ui-sidebar {
+            width: 320px;
+            background: rgba(15, 16, 20, 0.95);
+            border-left: 1px solid var(--panel-border);
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            z-index: 10;
+            overflow-y: auto;
+        }
+
         .glass-panel {
-            position: absolute;
             background: var(--panel-bg);
             backdrop-filter: blur(12px);
             -webkit-backdrop-filter: blur(12px);
             border: 1px solid var(--panel-border);
             border-radius: 16px;
             padding: 16px;
-            z-index: 10;
             box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-        }
-
-        .draggable {
-            cursor: grab;
-        }
-
-        .draggable:active {
-            cursor: grabbing;
-        }
-
-        #dictionary {
-            top: 20px;
-            left: 20px;
-            width: 260px;
+            position: relative; /* Changed from absolute to flow naturally in sidebar */
         }
 
         #dictionary h3, #spectrum-panel h3 {
@@ -99,12 +103,6 @@
 
         .highlight { color: #fff; font-weight: 600; }
 
-        #spectrum-panel {
-            top: 20px;
-            right: 20px;
-            width: 260px;
-        }
-
         .spectrum-bar {
             height: 14px;
             background: linear-gradient(to right, 
@@ -139,13 +137,10 @@
         }
 
         #controls {
-            bottom: 30px;
-            left: 50%;
-            transform: translateX(-50%);
             display: flex;
             flex-direction: column;
             align-items: stretch;
-            padding: 15px 30px;
+            padding: 15px 20px;
         }
         
         .controls-header {
@@ -155,16 +150,6 @@
             margin-bottom: 15px;
             position: relative;
         }
-
-        .drag-handle {
-            width: 40px;
-            height: 4px;
-            background: rgba(255, 255, 255, 0.2);
-            border-radius: 2px;
-            cursor: grab;
-        }
-        
-        .drag-handle:active { cursor: grabbing; }
 
         .minimize-btn {
             position: absolute;
@@ -187,8 +172,9 @@
 
         .controls-content {
             display: flex;
+            flex-direction: column; /* Stacked vertically to fit sidebar */
             align-items: center;
-            gap: 30px;
+            gap: 20px;
         }
 
         button {
@@ -202,6 +188,7 @@
             cursor: pointer;
             transition: all 0.2s;
             box-shadow: 0 0 20px rgba(0, 255, 204, 0.3);
+            width: 100%;
         }
 
         button:hover {
@@ -230,6 +217,7 @@
             flex-direction: column;
             align-items: center;
             gap: 10px;
+            width: 100%;
         }
 
         .switch {
@@ -285,7 +273,7 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            width: 180px;
+            width: 100%;
         }
 
         input[type=range] {
@@ -335,62 +323,68 @@
 </head>
 <body>
 
-    <div class="glass-panel draggable" id="dictionary">
-        <h3 id="dictToggle">How it Works <span class="dropdown-icon" id="dictArrow">▶</span></h3>
-        <ul id="dictContent" style="display: none;">
-            <li><span class="highlight" style="color: #00ffcc;">The Closed Loop:</span> Notice how the electrons travel left along the bottom wire back to the pump. They are endlessly recycled!</li>
-            <li><span class="highlight" style="color: #ffaa00;">Battery Pump:</span> Lifts returning electrons up to the top highway, gaining energy.</li>
-            <li><span class="highlight">Conduction Band:</span> The high-energy "highway".</li>
-            <li><span class="highlight">Valence Band:</span> The lower-energy resting state.</li>
-            <li><span class="highlight">Photons (Waves):</span> The energy lost in the single drop is emitted as light!</li>
-        </ul>
+    <div id="sim-container">
+        <canvas id="ledCanvas"></canvas>
     </div>
 
-    <div class="glass-panel draggable" id="spectrum-panel">
-        <h3>Photon Energy (Color)</h3>
-        <div class="spectrum-bar">
-            <div id="spectrum-marker" style="left: 15.38%;"></div>
+    <div id="ui-sidebar">
+        <div class="glass-panel" id="dictionary">
+            <h3 id="dictToggle">How it Works <span class="dropdown-icon" id="dictArrow">▶</span></h3>
+            <ul id="dictContent" style="display: none;">
+                <li><span class="highlight" style="color: #00ffcc;">The Closed Loop:</span> Notice how the electrons travel left along the bottom wire back to the pump. They are endlessly recycled!</li>
+                <li><span class="highlight" style="color: #ffaa00;">Battery Pump:</span> Lifts returning electrons up to the top highway, gaining energy.</li>
+                <li><span class="highlight">Conduction Band:</span> The high-energy "highway".</li>
+                <li><span class="highlight">Valence Band:</span> The lower-energy resting state.</li>
+                <li><span class="highlight">Photons (Waves):</span> The energy lost in the single drop is emitted as light!</li>
+            </ul>
         </div>
-        <div class="spectrum-labels">
-            <span>Low (1.8 eV)</span>
-            <span>High (3.1 eV)</span>
+
+        <div class="glass-panel" id="spectrum-panel">
+            <h3>Photon Energy (Color)</h3>
+            <div class="spectrum-bar">
+                <div id="spectrum-marker" style="left: 15.38%;"></div>
+            </div>
+            <div class="spectrum-labels">
+                <span>Low (1.8 eV)</span>
+                <span>High (3.1 eV)</span>
+            </div>
+        </div>
+
+        <div class="glass-panel" id="controls">
+            <div class="controls-header">
+                <button id="minimizeBtn" class="minimize-btn">_ MINIMIZE</button>
+            </div>
+            
+            <div class="controls-content" id="controlsContent">
+                <div style="display: flex; gap: 10px; width: 100%;">
+                    <button id="dropBtn">Add e-</button>
+                    <button id="resetBtn" class="danger-btn">Reset</button>
+                </div>
+
+                <div class="toggle-container">
+                    <label class="switch">
+                        <input type="checkbox" id="continuousMode">
+                        <span class="slider"></span>
+                    </label>
+                    <span class="toggle-label" style="margin-bottom: 0;">Continuous</span>
+                </div>
+
+                <div class="slider-group">
+                    <div class="toggle-label">Flow Rate</div>
+                    <input type="range" id="flowRate" min="2" max="60" step="1" value="45">
+                </div>
+
+                <div class="slider-group">
+                    <div class="toggle-label">Band Gap (Drop Height)</div>
+                    <input type="range" id="gapHeight" min="1.8" max="3.1" step="0.05" value="2.0">
+                    <div id="evDisplay">2.00 eV</div>
+                </div>
+            </div>
         </div>
     </div>
-
-    <div class="glass-panel draggable" id="controls">
-        <div class="controls-header">
-            <div class="drag-handle"></div>
-            <button id="minimizeBtn" class="minimize-btn">_ MINIMIZE</button>
-        </div>
-        
-        <div class="controls-content" id="controlsContent">
-            <button id="dropBtn">Add Electron</button>
-            <button id="resetBtn" class="danger-btn">Reset</button>
-
-            <div class="toggle-container">
-                <label class="switch">
-                    <input type="checkbox" id="continuousMode">
-                    <span class="slider"></span>
-                </label>
-                <span class="toggle-label" style="margin-bottom: 0;">Continuous</span>
-            </div>
-
-            <div class="slider-group">
-                <div class="toggle-label">Flow Rate</div>
-                <input type="range" id="flowRate" min="2" max="60" step="1" value="45">
-            </div>
-
-            <div class="slider-group" style="width: 250px;">
-                <div class="toggle-label">Band Gap (Drop Height)</div>
-                <input type="range" id="gapHeight" min="1.8" max="3.1" step="0.05" value="2.0">
-                <div id="evDisplay">2.00 eV</div>
-            </div>
-        </div>
-    </div>
-
-    <canvas id="ledCanvas"></canvas>
 
 <script>
+    const simContainer = document.getElementById('sim-container');
     const canvas = document.getElementById('ledCanvas');
     const ctx = canvas.getContext('2d');
     
@@ -423,54 +417,13 @@
         minimizeBtn.innerText = isHidden ? '_ MINIMIZE' : '□ EXPAND';
     });
 
-    // Drag Logic
-    const draggables = document.querySelectorAll('.draggable');
-    let activePanel = null;
-    let offsetX = 0;
-    let offsetY = 0;
-
-    draggables.forEach(panel => {
-        panel.addEventListener('mousedown', (e) => {
-            const tag = e.target.tagName.toLowerCase();
-            if (['input', 'button', 'span', 'h3'].includes(tag)) return;
-
-            activePanel = panel;
-            
-            if (window.getComputedStyle(panel).transform !== 'none') {
-                const rect = panel.getBoundingClientRect();
-                panel.style.transform = 'none';
-                panel.style.left = rect.left + 'px';
-                panel.style.top = rect.top + 'px';
-                panel.style.bottom = 'auto'; 
-            }
-
-            const rect = panel.getBoundingClientRect();
-            offsetX = e.clientX - rect.left;
-            offsetY = e.clientY - rect.top;
-            panel.style.zIndex = 100;
-        });
-    });
-
-    document.addEventListener('mousemove', (e) => {
-        if (!activePanel) return;
-        activePanel.style.left = (e.clientX - offsetX) + 'px';
-        activePanel.style.top = (e.clientY - offsetY) + 'px';
-        activePanel.style.right = 'auto'; 
-    });
-
-    document.addEventListener('mouseup', () => {
-        if (activePanel) {
-            activePanel.style.zIndex = 10;
-            activePanel = null;
-        }
-    });
-
     // Single Rectangle Geometry Setup
     let floorY, dropZoneX, pumpX, pumpWidth;
 
     function resizeCanvas() {
-        canvas.width = window.innerWidth;
-        canvas.height = window.innerHeight;
+        // NEW: Base size off the container instead of the whole window so it respects the sidebar
+        canvas.width = simContainer.clientWidth;
+        canvas.height = simContainer.clientHeight;
         
         floorY = canvas.height - 250; 
         pumpX = 100;
@@ -491,6 +444,9 @@
     let frameCount = 0;
     let lightIntensity = 0; // Tracks overall LED brightness
 
+    // NEW: Variable to hold the actual color of the LED currently emitting
+    let activeLEDColor = getLEDColor(2.0);
+
     resetBtn.addEventListener('click', () => {
         electrons = [];
         photons = [];
@@ -509,6 +465,7 @@
         evDisplay.innerText = `${ev.toFixed(2)} eV`;
         evDisplay.style.color = getLEDColor(ev);
         spectrumMarker.style.left = `${getRatio(ev) * 100}%`;
+        // Notice we DO NOT change `activeLEDColor` here anymore!
     });
     gapSlider.dispatchEvent(new Event('input'));
 
@@ -519,7 +476,8 @@
             y: floorY,
             vy: 0,
             state: 'pumping', 
-            trail: []
+            trail: [],
+            dropEv: 2.0 // Default memory
         });
     }
 
@@ -542,7 +500,6 @@
         const ev = parseFloat(gapSlider.value);
         const gapPx = ev * 160; 
         const ledgeY = floorY - gapPx;
-        const color = getLEDColor(ev);
 
         // Calculate dynamic brightness based on active photons
         // Max brightness reached at ~15 simultaneous photons
@@ -598,11 +555,11 @@
         ctx.lineTo(dropZoneX + bulbRadius, floorY + 30);      // Right Side
         ctx.closePath();
 
-        // Fill color and shadow scale directly with photon intensity
-        ctx.fillStyle = color;
+        // Fill color and shadow scale directly with photon intensity AND use the active falling color
+        ctx.fillStyle = activeLEDColor;
         ctx.globalAlpha = 0.05 + (lightIntensity * 0.45);
         ctx.shadowBlur = 80 * lightIntensity;
-        ctx.shadowColor = color;
+        ctx.shadowColor = activeLEDColor;
         ctx.fill();
 
         // Glass Outline
@@ -653,12 +610,12 @@
         ctx.fillText("CONDUCTION BAND", centerX, ledgeY - 25);
         ctx.globalAlpha = 1.0;
 
-        // Valence Band (Bottom)
-        ctx.fillStyle = color;
+        // Valence Band (Bottom) uses activeLEDColor
+        ctx.fillStyle = activeLEDColor;
         ctx.globalAlpha = 0.05;
         ctx.fillRect(pumpX + pumpWidth, floorY - 15, blockWidth, 30);
         
-        ctx.fillStyle = color;
+        ctx.fillStyle = activeLEDColor;
         ctx.textAlign = "center";
         ctx.globalAlpha = 0.5;
         ctx.fillText("VALENCE BAND", centerX, floorY + 35);
@@ -701,6 +658,9 @@
                 if (e.x >= dropZoneX) {
                     e.x = dropZoneX;
                     e.state = 'falling';
+                    
+                    // NEW: Lock in the current height/eV right as it starts falling!
+                    e.dropEv = parseFloat(gapSlider.value); 
                 }
             } 
             else if (e.state === 'falling') {
@@ -713,13 +673,17 @@
                     e.state = 'valence';
                     e.vy = 0;
                     
+                    // NEW: Generate color strictly from the recorded drop height
+                    const impactColor = getLEDColor(e.dropEv);
+                    activeLEDColor = impactColor; // Set global led bulb color
+                    
                     photons.push({
                         x: e.x, y: e.y,
                         angle: Math.PI * 1.5 + (Math.random() * 2 - 1), // Radiate upwards/outwards
                         speed: 4 + Math.random() * 3,
-                        life: 1.0, color: color
+                        life: 1.0, color: impactColor
                     });
-                    createSparks(e.x, e.y, color);
+                    createSparks(e.x, e.y, impactColor);
                 }
             }
             else if (e.state === 'valence') {
